@@ -50,18 +50,33 @@ function PerfilPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get(`${API_BASE_URL}/eventos/autor/${currentUserId}`, {
+            // Cargar eventos presenciales
+            const eventsResponse = await axios.get(`${API_BASE_URL}/eventos/autor/${currentUserId}`, {
                 headers: getAuthHeaders()
             });
 
-            // Aquí filtramos los eventos y webinars.
-            // Asumo que tienes una propiedad 'esWebinar' o 'tipo' en tus eventos.
-            // Si no, necesitarás ajustar esta lógica o la forma en que tu backend diferencia.
-            const events = response.data.filter(item => item.tipo !== 'WEBINAR' && item.tipo !== 'ONLINE'); // Ajusta según tu campo
-            const webinars = response.data.filter(item => item.tipo === 'WEBINAR' || item.tipo === 'ONLINE'); // Ajusta según tu campo
+            // Cargar webinars desde el endpoint correcto
+            const webinarsResponse = await axios.get(`${API_BASE_URL}/webinars`, {
+                headers: getAuthHeaders()
+            });
+
+            // Filtrar solo los webinars del usuario actual
+            const userWebinars = webinarsResponse.data.filter(webinar => 
+                webinar.autor && webinar.autor.id == currentUserId
+            );
+
+            // Los eventos presenciales ya vienen filtrados por autor
+            const events = eventsResponse.data.filter(item => item.tipo !== 'WEBINAR' && item.tipo !== 'ONLINE');
 
             setUserEvents(events);
-            setUserWebinars(webinars);
+            setUserWebinars(userWebinars);
+
+            console.log('Eventos cargados:', events.length);
+            console.log('Webinars cargados:', userWebinars.length);
+            console.log('User ID actual:', currentUserId);
+            console.log('Todos los webinars:', webinarsResponse.data);
+            console.log('Webinars filtrados:', userWebinars);
+
         } catch (err) {
             console.error('Error al cargar el contenido del usuario:', err);
             setError('No se pudo cargar tu contenido. Por favor, intente de nuevo.');
@@ -81,15 +96,46 @@ function PerfilPage() {
         fetchUserContent();
     }, [currentUserId, navigate]);
 
+    // Detectar cuando se crea un webinar y refrescar
+    useEffect(() => {
+        const shouldRefresh = sessionStorage.getItem('webinarCreated') || sessionStorage.getItem('webinarUpdated');
+        if (shouldRefresh) {
+            console.log('Refrescando perfil por creación/edición de webinar');
+            fetchUserContent();
+            sessionStorage.removeItem('webinarCreated');
+            sessionStorage.removeItem('webinarUpdated');
+        }
+    }, []);
+
+    // Monitorear cambios en sessionStorage
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'webinarCreated' || e.key === 'webinarUpdated') {
+                console.log('Storage change detected, refrescando perfil');
+                fetchUserContent();
+                sessionStorage.removeItem('webinarCreated');
+                sessionStorage.removeItem('webinarUpdated');
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
     // Función para manejar la eliminación de un evento o webinar
-    const handleDeleteContent = async (contentId, type) => { // 'type' puede ser 'evento' o 'webinar' si las rutas de eliminación son diferentes
+    const handleDeleteContent = async (contentId, type) => {
         const confirmMessage = `¿Estás seguro de que quieres eliminar este ${type}?`;
         if (window.confirm(confirmMessage)) {
             try {
-                // Asumo que la API de eliminación es la misma para ambos.
-                await axios.delete(`${API_BASE_URL}/eventos/${contentId}`, {
+                // Usar el endpoint correcto según el tipo
+                const endpoint = type === 'webinar' 
+                    ? `${API_BASE_URL}/webinars/${contentId}`
+                    : `${API_BASE_URL}/eventos/${contentId}`;
+                
+                await axios.delete(endpoint, {
                     headers: getAuthHeaders()
                 });
+                
                 alert(`${type.charAt(0).toUpperCase() + type.slice(1)} eliminado con éxito.`);
                 fetchUserContent(); // Recargar el contenido después de la eliminación
             } catch (err) {
@@ -141,15 +187,18 @@ function PerfilPage() {
                         roundedCircle
                         style={{ width: '150px', height: '150px', objectFit: 'cover', border: '3px solid #007bff' }}
                         className="mb-3 shadow-sm"
+                        onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/150?text=Perfil';
+                        }}
                     />
                     <h1 className="mb-1">Perfil de Usuario</h1>
                     {userEmail && <p className="text-muted lead">{userEmail}</p>}
                     <hr />
-                    <div className="d-flex justify-content-center gap-3"> {/* Contenedor para botones de creación */}
+                    <div className="d-flex justify-content-center gap-3">
                         <Button variant="success" onClick={() => navigate('/evento/new')} className="mt-3">
                             Crear Nuevo Evento Presencial
                         </Button>
-                        <Button variant="info" onClick={() => navigate('/webinar/new')} className="mt-3"> {/* Nueva ruta para crear webinar */}
+                        <Button variant="info" onClick={() => navigate('/webinar/new')} className="mt-3">
                             Crear Nuevo Webinar Online
                         </Button>
                     </div>
@@ -165,25 +214,27 @@ function PerfilPage() {
                             <Card className="event-card-profile h-100 shadow-sm border-0">
                                 <Card.Img
                                     variant="top"
-                                    src={webinar.imagen ? `http://localhost:8080/uploads/${webinar.imagen}` : 'https://via.placeholder.com/400x200?text=Webinar+Online'}
+                                    src={webinar.imagen ? (webinar.imagen.startsWith('http') ? webinar.imagen : `http://localhost:8080/uploads/${webinar.imagen}`) : 'https://via.placeholder.com/400x200?text=Webinar+Online'}
                                     alt={webinar.titulo}
                                     style={{ height: '200px', objectFit: 'cover' }}
+                                    onError={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/400x200?text=Webinar+Online';
+                                    }}
                                 />
                                 <Card.Body className="d-flex flex-column">
                                     <Card.Title className="text-primary">{webinar.titulo}</Card.Title>
                                     <Card.Text className="text-muted small mb-2">
-                                        <p className="mb-1"><strong>Descripción:</strong> {webinar.descripcion.substring(0, Math.min(webinar.descripcion.length, 100))}...</p>
-                                        <p className="mb-1"><strong>Enlace:</strong> <a href={webinar.enlaceWebinar} target="_blank" rel="noopener noreferrer">Ir al Webinar</a></p> {/* Asumo un campo 'enlaceWebinar' */}
-                                        <p className="mb-1"><strong>Capacidad:</strong> {webinar.capacidad}</p>
-                                        {webinar.fechaInicio && <p className="mb-1"><strong>Fecha Inicio:</strong> {new Date(webinar.fechaInicio).toLocaleDateString()}</p>}
-                                        {webinar.fechaFin && <p className="mb-1"><strong>Fecha Fin:</strong> {new Date(webinar.fechaFin).toLocaleDateString()}</p>}
-                                        {webinar.carrera && <p className="mb-1"><strong>Carrera:</strong> {webinar.carrera.nombre}</p>}
+                                        <div className="mb-1"><strong>Descripción:</strong> {webinar.descripcion && webinar.descripcion.length > 100 ? webinar.descripcion.substring(0, 100) + '...' : webinar.descripcion || 'Sin descripción'}</div>
+                                        {webinar.enlace && <div className="mb-1"><strong>Enlace:</strong> <a href={webinar.enlace} target="_blank" rel="noopener noreferrer">Ir al Webinar</a></div>}
+                                        {webinar.expositor && <div className="mb-1"><strong>Expositor:</strong> {webinar.expositor}</div>}
+                                        {webinar.fecha && <div className="mb-1"><strong>Fecha:</strong> {new Date(webinar.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>}
+                                        {webinar.autor && <div className="mb-1"><strong>Creado por:</strong> {webinar.autor.username}</div>}
                                     </Card.Text>
                                     <div className="mt-auto d-flex justify-content-between pt-3 border-top">
-                                        <Button variant="outline-primary" size="sm" onClick={() => navigate(`/webinars/${webinar.id}`)}> {/* Nueva ruta para ver detalles del webinar */}
+                                        <Button variant="outline-primary" size="sm" onClick={() => navigate(`/webinars/${webinar.id}`)}>
                                             Ver Detalles
                                         </Button>
-                                        <Button variant="outline-warning" size="sm" className="ms-2" onClick={() => navigate(`/edit-webinar/${webinar.id}`)}> {/* Nueva ruta para editar webinar */}
+                                        <Button variant="outline-warning" size="sm" className="ms-2" onClick={() => navigate(`/edit-webinar/${webinar.id}`)}>
                                             Editar
                                         </Button>
                                         <Button
@@ -212,7 +263,7 @@ function PerfilPage() {
             </Row>
 
             {/* Sección de Mis Eventos Creados */}
-            <h2 className="text-center mb-4 mt-5">Mis Eventos Presenciales Creados</h2> {/* Título actualizado */}
+            <h2 className="text-center mb-4 mt-5">Mis Eventos Presenciales Creados</h2>
             <Row className="justify-content-center">
                 {userEvents.length > 0 ? (
                     userEvents.map(event => (
@@ -223,16 +274,19 @@ function PerfilPage() {
                                     src={event.imagen ? `http://localhost:8080/uploads/${event.imagen}` : 'https://via.placeholder.com/400x200?text=Sin+Imagen'}
                                     alt={event.titulo}
                                     style={{ height: '200px', objectFit: 'cover' }}
+                                    onError={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/400x200?text=Sin+Imagen';
+                                    }}
                                 />
                                 <Card.Body className="d-flex flex-column">
                                     <Card.Title className="text-primary">{event.titulo}</Card.Title>
                                     <Card.Text className="text-muted small mb-2">
-                                        <p className="mb-1"><strong>Descripción:</strong> {event.descripcion.substring(0, Math.min(event.descripcion.length, 100))}...</p>
-                                        <p className="mb-1"><strong>Ubicación:</strong> {event.ubicacion}</p>
-                                        <p className="mb-1"><strong>Capacidad:</strong> {event.capacidad}</p>
-                                        {event.fechaInicio && <p className="mb-1"><strong>Fecha Inicio:</strong> {new Date(event.fechaInicio).toLocaleDateString()}</p>}
-                                        {event.fechaFin && <p className="mb-1"><strong>Fecha Fin:</strong> {new Date(event.fechaFin).toLocaleDateString()}</p>}
-                                        {event.carrera && <p className="mb-1"><strong>Carrera:</strong> {event.carrera.nombre}</p>}
+                                        <div className="mb-1"><strong>Descripción:</strong> {event.descripcion && event.descripcion.length > 100 ? event.descripcion.substring(0, 100) + '...' : event.descripcion || 'Sin descripción'}</div>
+                                        <div className="mb-1"><strong>Ubicación:</strong> {event.ubicacion}</div>
+                                        <div className="mb-1"><strong>Capacidad:</strong> {event.capacidad}</div>
+                                        {event.fechaInicio && <div className="mb-1"><strong>Fecha Inicio:</strong> {new Date(event.fechaInicio).toLocaleDateString()}</div>}
+                                        {event.fechaFin && <div className="mb-1"><strong>Fecha Fin:</strong> {new Date(event.fechaFin).toLocaleDateString()}</div>}
+                                        {event.carrera && <div className="mb-1"><strong>Carrera:</strong> {event.carrera.nombre}</div>}
                                     </Card.Text>
                                     <div className="mt-auto d-flex justify-content-between pt-3 border-top">
                                         <Button variant="outline-primary" size="sm" onClick={() => navigate(`/eventos/${event.id}`)}>

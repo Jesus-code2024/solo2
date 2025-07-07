@@ -390,33 +390,6 @@ function WebinarsPage() {
                     </div>
                 </div>
 
-                {/* Debug info - remover en producción */}
-                {process.env.NODE_ENV === 'development' && (
-                    <div style={{ margin: '20px 0', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-                        <small>
-                            <strong>Debug Info:</strong> Webinars cargados: {webinars.length} | 
-                            Filtros activos: {selectedWebinarType} | 
-                            Búsqueda: "{searchTerm}" | 
-                            Filtrados: {sortedAndFilteredWebinars.length}
-                            <Button 
-                                variant="outline-secondary" 
-                                size="sm" 
-                                onClick={() => console.log('Current webinars:', webinars)}
-                                style={{ marginLeft: '10px' }}
-                            >
-                                Log Webinars
-                            </Button>
-                            <Button 
-                                variant="outline-info" 
-                                size="sm" 
-                                onClick={runDiagnostic}
-                                style={{ marginLeft: '5px' }}
-                            >
-                                Diagnóstico Completo
-                            </Button>
-                        </small>
-                    </div>
-                )}
 
                 {/* Search and Filters */}
                 {/* Si no quieres los filtros, puedes comentar o eliminar toda la sección `search-section` */}

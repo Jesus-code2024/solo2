@@ -1,4 +1,3 @@
-// src/components/CreateWebinarPage.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +13,7 @@ function CreateWebinarPage() {
     const [fecha, setFecha] = useState('');
     const [expositor, setExpositor] = useState('');
     const [enlace, setEnlace] = useState('');
-    const [imagen, setImagen] = useState('');
+    const [selectedFile, setSelectedFile] = useState(null); // <-- Nuevo estado para el archivo
     const [destacado, setDestacado] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
@@ -26,36 +25,48 @@ function CreateWebinarPage() {
         return token ? { Authorization: `Bearer ${token}` } : {};
     };
 
+    // Nuevo manejador para el input de tipo 'file'
+    const handleFileChange = (e) => {
+        setSelectedFile(e.target.files[0]); // Guarda el primer archivo seleccionado
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
         setSuccess(false);
         setLoading(true);
 
-        const newWebinar = {
-            titulo,
-            descripcion,
-            fecha,
-            expositor,
-            enlace,
-            imagen,
-            destacado
-        };
+        const formData = new FormData(); // <-- Usamos FormData para enviar archivos
+        formData.append('titulo', titulo);
+        formData.append('descripcion', descripcion);
+        formData.append('fecha', fecha);
+        formData.append('expositor', expositor);
+        formData.append('enlace', enlace);
+        formData.append('destacado', destacado);
+
+        if (selectedFile) {
+            formData.append('file', selectedFile); // <-- ¡Importante! Aquí se añade el archivo
+        }
 
         try {
-            await axios.post(API_URL_WEBINARS, newWebinar, { headers: getAuthHeaders() });
+            const headers = getAuthHeaders();
+            // No establecemos Content-Type a 'multipart/form-data' explícitamente.
+            // Axios y el navegador lo harán automáticamente al usar FormData.
+            // Si lo estableces manualmente, puede causar problemas con los límites de la parte.
+
+            await axios.post(API_URL_WEBINARS, formData, { headers }); // Enviamos formData
             setSuccess(true);
-            
+
             // Marcar que se creó un webinar para refrescar la página de webinars
             sessionStorage.setItem('webinarCreated', 'true');
-            
+
             // También refrescar el perfil si viene de ahí
             const fromProfile = sessionStorage.getItem('createWebinarFromProfile');
             if (fromProfile) {
                 sessionStorage.setItem('webinarCreatedFromProfile', 'true');
                 sessionStorage.removeItem('createWebinarFromProfile');
             }
-            
+
             setTimeout(() => {
                 navigate(fromProfile ? '/perfil' : '/webinars');
             }, 1500);
@@ -65,6 +76,8 @@ function CreateWebinarPage() {
             if (err.response && err.response.status === 401) {
                 localStorage.removeItem('jwtToken');
                 navigate('/login');
+            } else if (err.response && err.response.data && err.response.data.message) {
+                 setError(`Error: ${err.response.data.message}`);
             }
         } finally {
             setLoading(false);
@@ -96,7 +109,7 @@ function CreateWebinarPage() {
                                         ¡Webinar creado exitosamente! Redirigiendo...
                                     </Alert>
                                 )}
-                                
+
                                 <Form onSubmit={handleSubmit}>
                                     <Row>
                                         <Col md={12}>
@@ -182,13 +195,12 @@ function CreateWebinarPage() {
                                             <Form.Group className="mb-3">
                                                 <Form.Label className="fw-bold">
                                                     <FaImage className="me-2" />
-                                                    URL de Imagen
+                                                    Subir Imagen
                                                 </Form.Label>
                                                 <Form.Control
-                                                    type="url"
-                                                    value={imagen}
-                                                    onChange={(e) => setImagen(e.target.value)}
-                                                    placeholder="https://ejemplo.com/imagen.jpg"
+                                                    type="file" // <-- ¡Cambiado a tipo "file"!
+                                                    accept="image/*" // Permite solo archivos de imagen
+                                                    onChange={handleFileChange} // <-- Nuevo manejador
                                                 />
                                             </Form.Group>
                                         </Col>
@@ -208,20 +220,18 @@ function CreateWebinarPage() {
                                         </Col>
                                     </Row>
 
-                                    {/* Vista previa de imagen */}
-                                    {imagen && (
+                                    {/* Vista previa de imagen (ahora para el archivo seleccionado) */}
+                                    {selectedFile && (
                                         <Row>
                                             <Col md={12}>
                                                 <div className="mb-4">
                                                     <h6 className="fw-bold">Vista previa de imagen:</h6>
-                                                    <img 
-                                                        src={imagen} 
+                                                    <img
+                                                        src={URL.createObjectURL(selectedFile)} // Crea una URL temporal para la vista previa
                                                         alt="Vista previa"
                                                         className="img-fluid rounded"
                                                         style={{ maxHeight: '200px', objectFit: 'cover' }}
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                        }}
+                                                        onLoad={() => URL.revokeObjectURL(URL.createObjectURL(selectedFile))} // Libera la URL cuando la imagen cargue
                                                     />
                                                 </div>
                                             </Col>
@@ -229,16 +239,16 @@ function CreateWebinarPage() {
                                     )}
 
                                     <div className="d-flex justify-content-between">
-                                        <Button 
-                                            variant="outline-secondary" 
+                                        <Button
+                                            variant="outline-secondary"
                                             onClick={() => navigate('/webinars')}
                                             disabled={loading}
                                         >
                                             <FaTimes className="me-2" />
                                             Cancelar
                                         </Button>
-                                        <Button 
-                                            variant="primary" 
+                                        <Button
+                                            variant="primary"
                                             type="submit"
                                             disabled={loading}
                                         >
