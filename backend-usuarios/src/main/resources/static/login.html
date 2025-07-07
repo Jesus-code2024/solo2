@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba Backend Usuarios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary-color: #004A98;
+            --secondary-color: #E31D1A;
+            --accent-color: #00A0DC;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1000px;
+            margin: auto;
+            display: flex;
+            min-height: 600px;
+        }
+        .login-banner {
+            background: var(--primary-color);
+            color: white;
+            padding: 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://www.tecsup.edu.pe/sites/default/files/2020-07/tecsup-portada-institucional-lima.jpg') center/cover;
+            opacity: 0.2;
+            z-index: 0;
+        }
+        .login-banner-content {
+            position: relative;
+            z-index: 1;
+        }
+        .login-form-container {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo-container img {
+            height: 60px;
+            margin-bottom: 15px;
+        }
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        .form-floating input {
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+        }
+        .btn-login {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+        }
+        .google-btn {
+            background: #fff;
+            color: #444;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 500;
+            margin-bottom: 1em;
+            transition: all 0.3s ease;
+        }
+        .google-btn img {
+            width: 20px;
+        }
+        .google-btn:hover {
+            background: #f8f9fa;
+            border-color: #ddd;
+        }
+        .form-divider {
+            text-align: center;
+            position: relative;
+            margin: 20px 0;
+        }
+        .form-divider::before,
+        .form-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        .form-divider::before { left: 0; }
+        .form-divider::after { right: 0; }
+        .alert {
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        @media (max-width: 768px) {
+            .login-banner {
+                display: none;
+            }
+            .login-container {
+                max-width: 500px;
+            }
+        }
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .features-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.1em;
+        }
+        .features-list li i {
+            margin-right: 10px;
+            color: var(--accent-color);
+        }
+        .toggle-form {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .toggle-form:hover {
+            color: var(--primary-color);
+        }
+        .form-container {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container" id="signinContainer">
+        <!-- Banner lateral -->
+        <div class="login-banner">
+            <div class="login-banner-content">
+                <h1 class="display-4 mb-4">TECSUP</h1>
+                <p class="lead mb-4">Portal Institucional</p>
+                <ul class="features-list">
+                    <li><i class="fas fa-graduation-cap"></i> Accede a recursos educativos</li>
+                    <li><i class="fas fa-calendar-alt"></i> Gestiona eventos y webinars</li>
+                    <li><i class="fas fa-bullhorn"></i> Mantente informado con anuncios</li>
+                    <li><i class="fas fa-users"></i> Conecta con la comunidad TECSUP</li>
+                </ul>
+            </div>
+        </div>
+        <!-- Contenedor del formulario -->
+        <div class="login-form-container">
+            <!-- Logo -->
+            <div class="logo-container">
+                <img src="https://www.tecsup.edu.pe/wp-content/uploads/2024/07/Group-680.png" alt="TECSUP">
+                <h2 class="h4 text-center mb-4">Acceso al Portal</h2>
+            </div>
+            <!-- Formulario de inicio de sesión -->
+            <form id="signinForm">
+                <div class="form-floating mb-3">
+                    <input type="text" id="signinUser" placeholder="Usuario o Email" required>
+                    <label for="signinUser">Usuario o Email</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="password" id="signinPassword" placeholder="Contraseña" required>
+                    <label for="signinPassword">Contraseña</label>
+                </div>
+                <button type="submit" class="btn-login">Entrar</button>
+            </form>
+            <div class="result" id="signinResult"></div>
+            <div class="result" id="tokenResult"></div>
+            <div class="form-divider">
+                <span>O</span>
+            </div>
+            <!-- Botón de Google Auth -->
+            <button class="google-btn" id="googleBtn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google"> Iniciar con Google
+            </button>
+            <div class="result" id="googleResult"></div>
+            <!-- Enlace para registro -->
+            <p class="text-center">
+                ¿No tienes una cuenta? <a href="#" class="toggle-form" id="showSignup">Regístrate aquí</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Formulario de registro (oculto por defecto) -->
+    <div class="login-container" id="signupContainer" style="display:none;">
+        <!-- Banner lateral -->
+        <div class="login-banner">
+            <div class="login-banner-content">
+                <h1 class="display-4 mb-4">TECSUP</h1>
+                <p class="lead mb-4">Portal Institucional</p>
+                <ul class="features-list">
+                    <li><i class="fas fa-graduation-cap"></i> Accede a recursos educativos</li>
+                    <li><i class="fas fa-calendar-alt"></i> Gestiona eventos y webinars</li>
+                    <li><i class="fas fa-bullhorn"></i> Mantente informado con anuncios</li>
+                    <li><i class="fas fa-users"></i> Conecta con la comunidad TECSUP</li>
+                </ul>
+            </div>
+        </div>
+        <!-- Contenedor del formulario -->
+        <div class="login-form-container">
+            <!-- Logo -->
+            <div class="logo-container">
+                <img src="https://www.tecsup.edu.pe/themes/custom/tecsup/logo.svg" alt="TECSUP">
+                <h2 class="h4 text-center mb-4">Registro en el Portal</h2>
+            </div>
+            <!-- Formulario de registro -->
+            <form id="signupForm">
+                <div class="form-floating mb-3">
+                    <input type="text" id="signupUsername" placeholder="Usuario" required>
+                    <label for="signupUsername">Usuario</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="email" id="signupEmail" placeholder="Email" required>
+                    <label for="signupEmail">Email</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="password" id="signupPassword" placeholder="Contraseña" required>
+                    <label for="signupPassword">Contraseña</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="text" id="signupFirstName" placeholder="Nombre" required>
+                    <label for="signupFirstName">Nombre</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input type="text" id="signupLastName" placeholder="Apellido" required>
+                    <label for="signupLastName">Apellido</label>
+                </div>
+                <button type="submit" class="btn-login">Registrarse</button>
+            </form>
+            <div class="result" id="signupResult"></div>
+
+            <div class="form-divider">
+                <span>O</span>
+            </div>
+
+            <!-- Botón de Google Auth -->
+            <button class="google-btn" id="googleBtnSignup">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google"> Iniciar con Google
+            </button>
+            <div class="result" id="googleResultSignup"></div>
+
+            <!-- Enlace para iniciar sesión -->
+            <p class="text-center">
+                ¿Ya tienes una cuenta? <a href="#" class="toggle-form" id="showSignin">Inicia sesión aquí</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+const API = 'http://localhost:8080/api/auth';
+
+// Verificar si hay token en la URL (caso de autenticación con Google)
+const params = new URLSearchParams(window.location.search);
+if(params.has('token')) {
+    const token = params.get('token');
+    // Guardar el token en localStorage
+    localStorage.setItem('token', token);
+    
+    // Mostrar mensaje de éxito
+    document.getElementById('tokenResult').textContent = "Inicio de sesión con Google exitoso. Redirigiendo...";
+    
+    // Redireccionar a la página principal
+    setTimeout(() => {
+        window.location.href = 'listar-anuncios.html';
+    }, 1000);
+}
+
+// Registro
+const signupForm = document.getElementById('signupForm');
+signupForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+        username: signupUsername.value,
+        email: signupEmail.value,
+        password: signupPassword.value,
+        firstName: signupFirstName.value,
+        lastName: signupLastName.value
+    };
+    const res = await fetch(`${API}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    document.getElementById('signupResult').textContent = await res.text();
+};
+
+// Login
+const signinForm = document.getElementById('signinForm');
+signinForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+        usernameOrEmail: signinUser.value,
+        password: signinPassword.value
+    };
+    try {
+        const res = await fetch(`${API}/signin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (result.accessToken) {
+            // Guardar el token en localStorage
+            localStorage.setItem('token', result.accessToken);
+            
+            // Mostrar mensaje de éxito
+            document.getElementById('signinResult').textContent = "Inicio de sesión exitoso. Redirigiendo...";
+            
+            // Redireccionar a la página principal de anuncios
+            setTimeout(() => {
+                window.location.href = 'listar-anuncios.html';
+            }, 1000);
+        } else {
+            document.getElementById('signinResult').textContent = "Error en el inicio de sesión: " + JSON.stringify(result);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('signinResult').textContent = "Error en el inicio de sesión: " + error.message;
+    }
+};
+
+// Google Auth
+const googleBtn = document.getElementById('googleBtn');
+googleBtn.onclick = () => {
+    // Redirige a Google y vuelve al login para procesar el token
+    window.location.href = 'http://localhost:8080/oauth2/authorize/google?redirect_uri=http://localhost:8080/login.html';
+};
+
+// Mostrar/ocultar formularios de inicio de sesión y registro
+document.getElementById('showSignup').onclick = (e) => {
+    e.preventDefault();
+    document.getElementById('signinContainer').style.display = 'none';
+    document.getElementById('signupContainer').style.display = 'flex';
+};
+document.getElementById('showSignin').onclick = (e) => {
+    e.preventDefault();
+    document.getElementById('signupContainer').style.display = 'none';
+    document.getElementById('signinContainer').style.display = 'flex';
+};
+</script>
+</body>
+</html>

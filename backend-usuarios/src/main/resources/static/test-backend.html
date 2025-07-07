@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba Backend Usuarios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 400px; margin: 40px auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+        h2 { text-align: center; }
+        input, button { width: 100%; padding: 0.7em; margin: 0.5em 0; border-radius: 4px; border: 1px solid #ccc; }
+        button { background: #1976d2; color: #fff; border: none; cursor: pointer; }
+        button:hover { background: #1565c0; }
+        .result { margin-top: 1em; font-size: 0.95em; word-break: break-all; }
+        .google-btn { background: #fff; color: #444; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .google-btn img { width: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Registro</h2>
+    <form id="signupForm">
+        <input type="text" id="signupUsername" placeholder="Usuario" required>
+        <input type="email" id="signupEmail" placeholder="Email" required>
+        <input type="password" id="signupPassword" placeholder="Contraseña" required>
+        <input type="text" id="signupFirstName" placeholder="Nombre" required>
+        <input type="text" id="signupLastName" placeholder="Apellido" required>
+        <button type="submit">Registrarse</button>
+    </form>
+    <div class="result" id="signupResult"></div>
+
+    <h2>Iniciar Sesión</h2>
+    <form id="signinForm">
+        <input type="text" id="signinUser" placeholder="Usuario o Email" required>
+        <input type="password" id="signinPassword" placeholder="Contraseña" required>
+        <button type="submit">Entrar</button>
+    </form>
+    <div class="result" id="signinResult"></div>
+
+    <h2>Google Auth</h2>
+    <button class="google-btn" id="googleBtn">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google"> Iniciar con Google
+    </button>
+    <div class="result" id="googleResult"></div>
+
+    <h2>Token recibido</h2>
+    <div class="result" id="tokenResult">(Aquí aparecerá el token JWT si llegas desde Google)</div>
+    <div class="result" id="userInfoResult"></div>
+</div>
+<script>
+const API = 'http://localhost:8080/api/auth';
+
+// Mostrar token si viene en la URL
+const params = new URLSearchParams(window.location.search);
+if(params.has('token')) {
+    const token = params.get('token');
+    document.getElementById('tokenResult').textContent = token;
+    // Decodificar JWT para mostrar info de usuario
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        let html = '<b>Información del usuario:</b><br>';
+        html += `Nombre: ${payload.firstName || ''} ${payload.lastName || ''}<br>`;
+        html += `Email: ${payload.sub || payload.email || ''}<br>`;
+        html += `<pre style="white-space:pre-wrap;">${JSON.stringify(payload, null, 2)}</pre>`;
+        document.getElementById('userInfoResult').innerHTML = html;
+    } catch(e) {
+        document.getElementById('userInfoResult').textContent = 'No se pudo decodificar el token.';
+    }
+}
+
+// Registro
+const signupForm = document.getElementById('signupForm');
+signupForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+        username: signupUsername.value,
+        email: signupEmail.value,
+        password: signupPassword.value,
+        firstName: signupFirstName.value,
+        lastName: signupLastName.value
+    };
+    const res = await fetch(`${API}/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    document.getElementById('signupResult').textContent = await res.text();
+};
+
+// Login
+const signinForm = document.getElementById('signinForm');
+signinForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const data = {
+        usernameOrEmail: signinUser.value,
+        password: signinPassword.value
+    };
+    const res = await fetch(`${API}/signin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    document.getElementById('signinResult').textContent = JSON.stringify(result, null, 2);
+    if(result.accessToken) {
+        document.getElementById('tokenResult').textContent = result.accessToken;
+        // Decodificar JWT para mostrar info de usuario
+        try {
+            const payload = JSON.parse(atob(result.accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+            let html = '<b>Información del usuario:</b><br>';
+            html += `Nombre: ${payload.firstName || ''} ${payload.lastName || ''}<br>`;
+            html += `Email: ${payload.sub || payload.email || ''}<br>`;
+            html += `<pre style="white-space:pre-wrap;">${JSON.stringify(payload, null, 2)}</pre>`;
+            document.getElementById('userInfoResult').innerHTML = html;
+        } catch(e) {
+            document.getElementById('userInfoResult').textContent = 'No se pudo decodificar el token.';
+        }
+    }
+};
+
+// Google Auth
+const googleBtn = document.getElementById('googleBtn');
+googleBtn.onclick = () => {
+    // Redirige a Google pero vuelve a este mismo HTML
+    window.location.href = 'http://localhost:8080/oauth2/authorize/google?redirect_uri=http://localhost:8080/test-backend.html';
+};
+</script>
+</body>
+</html>

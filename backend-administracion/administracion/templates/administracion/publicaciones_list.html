@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Publicaciones | Administración</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white min-h-screen font-sans">
+    <header class="bg-gradient-to-r from-blue-900 to-blue-700 shadow-lg py-4 mb-8">
+        <div class="container mx-auto flex items-center justify-between px-4">
+            <div class="flex items-center gap-3">
+                <img src="https://eventos.tecsup.edu.pe/portals/848140893/portalResource?resourceType=socialImage&_=1751156407921" alt="TECSUP Logo" class="h-12 w-auto drop-shadow-lg">
+                <span class="text-2xl font-extrabold text-white tracking-tight">TECSUP</span>
+            </div>
+            <nav class="flex gap-2">
+                <a href="/usuarios/" class="text-white hover:bg-blue-800 hover:text-white font-semibold transition px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white">Usuarios</a>
+                <a href="/publicaciones/" class="text-white hover:bg-blue-800 hover:text-white font-semibold transition px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white">Publicaciones</a>
+                <form method="post" action="/logout/" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="ml-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-800 font-semibold transition focus:outline-none focus:ring-2 focus:ring-red-300">Cerrar sesión</button>
+                </form>
+            </nav>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 pb-10">
+        <h2 class="text-3xl font-extrabold text-blue-900 mb-8 tracking-tight">Publicaciones</h2>
+        <div class="overflow-x-auto rounded-2xl shadow-2xl bg-white border border-blue-100">
+            <table class="min-w-full divide-y divide-blue-200">
+                <thead class="bg-gradient-to-r from-blue-50 to-blue-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-extrabold text-blue-800 uppercase tracking-wider">Tipo</th>
+                        <th class="px-4 py-3 text-left text-xs font-extrabold text-blue-800 uppercase tracking-wider">Título</th>
+                        <th class="px-4 py-3 text-left text-xs font-extrabold text-blue-800 uppercase tracking-wider">Descripción</th>
+                        <th class="px-4 py-3 text-left text-xs font-extrabold text-blue-800 uppercase tracking-wider">Fecha</th>
+                        <th class="px-4 py-3 text-left text-xs font-extrabold text-blue-800 uppercase tracking-wider">Detalles</th>
+                        <th class="px-4 py-3 text-left text-xs font-extrabold text-blue-800 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pub in publicaciones %}
+                    <tr class="hover:bg-blue-50 transition">
+                        <td class="px-4 py-2 font-semibold">
+                            {% if pub.tipo == 'anuncio' %}<span class="inline-block px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-bold">Anuncio</span>{% elif pub.tipo == 'evento' %}<span class="inline-block px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-bold">Evento</span>{% elif pub.tipo == 'webinar' %}<span class="inline-block px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs font-bold">Webinar</span>{% endif %}
+                        </td>
+                        <td class="px-4 py-2">{{ pub.titulo }}</td>
+                        <td class="px-4 py-2">{{ pub.contenido|default_if_none:'' }}{{ pub.descripcion|default_if_none:'' }}</td>
+                        <td class="px-4 py-2">
+                            {% if pub.fecha %}{{ pub.fecha }}{% elif pub.fechaInicio %}{{ pub.fechaInicio }}{% elif pub.fechaPublicacion %}{{ pub.fechaPublicacion }}{% else %}-{% endif %}
+                        </td>
+                        <td class="px-4 py-2">
+                            {% if pub.tipo == 'anuncio' %}
+                                {% if pub.carrera %}<span class="inline-block px-2 py-1 rounded bg-blue-200 text-blue-900 text-xs font-semibold">Carrera: {{ pub.carrera.nombre }}</span>{% elif pub.departamento %}<span class="inline-block px-2 py-1 rounded bg-blue-200 text-blue-900 text-xs font-semibold">Departamento: {{ pub.departamento.nombre }}</span>{% else %}<span class="inline-block px-2 py-1 rounded bg-blue-200 text-blue-900 text-xs font-semibold">General</span>{% endif %}
+                            {% elif pub.tipo == 'evento' %}
+                                <span class="inline-block px-2 py-1 rounded bg-green-200 text-green-900 text-xs font-semibold">Lugar: {{ pub.ubicacion }}</span><br><span class="inline-block px-2 py-1 rounded bg-green-200 text-green-900 text-xs font-semibold">Capacidad: {{ pub.capacidad }}</span>
+                            {% elif pub.tipo == 'webinar' %}
+                                <span class="inline-block px-2 py-1 rounded bg-yellow-200 text-yellow-900 text-xs font-semibold">Expositor: {{ pub.expositor }}</span><br>{% if pub.enlace %}<a href="{{ pub.enlace }}" class="text-blue-700 underline font-semibold" target="_blank">Enlace</a>{% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-2 flex gap-2">
+                            <a href="/publicaciones/editar/{{ pub.tipo }}/{{ pub.id }}/" class="px-4 py-1 bg-blue-700 text-white rounded-lg hover:bg-blue-900 text-xs font-bold shadow transition">Editar</a>
+                            <form method="post" action="/publicaciones/eliminar/{{ pub.tipo }}/{{ pub.id }}/" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="px-4 py-1 bg-red-600 text-white rounded-lg hover:bg-red-800 text-xs font-bold shadow transition">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-gray-400 py-6 text-lg">No hay publicaciones para mostrar.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+    <footer class="bg-white border-t mt-10 py-4">
+        <div class="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-sm text-blue-900">
+            <div class="flex items-center gap-2">
+                <img src="https://www.tecsup.edu.pe/sites/default/files/tecsup-logo_1.png" alt="TECSUP Logo" class="h-6 w-auto">
+                <span class="font-bold">TECSUP &copy; 2025</span>
+            </div>
+            <span class="mt-2 md:mt-0 font-semibold">Panel de Administración</span>
+        </div>
+    </footer>
+</body>
+</html>

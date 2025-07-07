@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Publicación | TECSUP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="https://www.tecsup.edu.pe/sites/default/files/favicon.ico">
+</head>
+<body class="bg-white min-h-screen font-sans flex flex-col">
+    <header class="bg-white shadow-md py-4 mb-8">
+        <div class="container mx-auto flex items-center justify-between px-4">
+            <div class="flex items-center gap-3">
+                <img src="https://www.tecsup.edu.pe/wp-content/uploads/2024/07/Group-680.png" alt="TECSUP Logo" class="h-10 w-auto">
+                
+            </div>
+            <nav>
+                <a href="index.html" class="text-blue-900 hover:text-blue-700 font-semibold transition px-3">Inicio</a>
+                <a href="listar-anuncios.html" class="text-blue-900 hover:text-blue-700 font-semibold transition px-3">Publicaciones</a>
+                <a href="crear-anuncio.html" class="text-blue-900 hover:text-blue-700 font-semibold transition px-3">Crear</a>
+            </nav>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 flex-1 pb-10">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <h2 class="text-3xl font-bold text-blue-900 mb-4 md:mb-0 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                Crear Nueva Publicación
+            </h2>
+            <a href="listar-anuncios.html" class="px-5 py-2 bg-blue-700 text-white rounded-lg shadow hover:bg-blue-800 font-semibold transition">Volver a la lista</a>
+        </div>
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <form id="publicationForm" onsubmit="crearPublicacion(event)">
+                    <div class="mb-6">
+                        <label for="publicationType" class="block text-sm font-semibold text-blue-900 mb-2">Tipo de Publicación</label>
+                        <select class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="publicationType" onchange="cambiarTipoPublicacion()">
+                            <option value="anuncio">Anuncio</option>
+                            <option value="evento">Evento</option>
+                            <option value="webinar">Webinar</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label for="titulo" class="block text-sm font-semibold text-blue-900 mb-2">Título</label>
+                        <input type="text" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="titulo" maxlength="200" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="contenido" class="block text-sm font-semibold text-blue-900 mb-2">Contenido</label>
+                        <textarea class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="contenido" rows="5" required></textarea>
+                    </div>
+                    <div class="mb-6">
+                        <label for="imagen" class="block text-sm font-semibold text-blue-900 mb-2">Imagen (opcional)</label>
+                        <input type="file" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="imagen" accept="image/*">
+                    </div>
+                    <!-- Anuncio Fields -->
+                    <div id="anuncioFields">
+                        <div class="mb-6">
+                            <label for="tipo" class="block text-sm font-semibold text-blue-900 mb-2">Tipo de Anuncio</label>
+                            <select class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="tipo" onchange="mostrarCamposAdicionales()" required>
+                                <option value="GEN">General</option>
+                                <option value="CAR">Por Carrera</option>
+                                <option value="DEP">Por Departamento</option>
+                            </select>
+                        </div>
+                        <div class="mb-6" id="carreraDiv" style="display: none;">
+                            <label for="carrera" class="block text-sm font-semibold text-blue-900 mb-2">Carrera</label>
+                            <select class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="carrera"></select>
+                        </div>
+                        <div class="mb-6" id="departamentoDiv" style="display: none;">
+                            <label for="departamento" class="block text-sm font-semibold text-blue-900 mb-2">Departamento</label>
+                            <select class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="departamento"></select>
+                        </div>
+                    </div>
+                    <!-- Evento Fields -->
+                    <div id="eventoFields" style="display: none;">
+                        <div class="mb-6">
+                            <label for="fecha" class="block text-sm font-semibold text-blue-900 mb-2">Fecha del Evento</label>
+                            <input type="datetime-local" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="fecha">
+                        </div>
+                        <div class="mb-6">
+                            <label for="lugar" class="block text-sm font-semibold text-blue-900 mb-2">Lugar</label>
+                            <input type="text" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="lugar">
+                        </div>
+                        <div class="mb-6">
+                            <label for="capacidad" class="block text-sm font-semibold text-blue-900 mb-2">Capacidad</label>
+                            <input type="number" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="capacidad" min="1">
+                        </div>
+                    </div>
+                    <!-- Webinar Fields -->
+                    <div id="webinarFields" style="display: none;">
+                        <div class="mb-6">
+                            <label for="fechaWebinar" class="block text-sm font-semibold text-blue-900 mb-2">Fecha del Webinar</label>
+                            <input type="datetime-local" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="fechaWebinar">
+                        </div>
+                        <div class="mb-6">
+                            <label for="plataforma" class="block text-sm font-semibold text-blue-900 mb-2">Plataforma</label>
+                            <input type="text" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="plataforma">
+                        </div>
+                        <div class="mb-6">
+                            <label for="enlace" class="block text-sm font-semibold text-blue-900 mb-2">Enlace</label>
+                            <input type="url" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="enlace">
+                        </div>
+                        <div class="mb-6">
+                            <label for="ponente" class="block text-sm font-semibold text-blue-900 mb-2">Ponente</label>
+                            <input type="text" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" id="ponente">
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="px-6 py-2 bg-blue-700 text-white rounded-lg shadow hover:bg-blue-800 font-semibold transition">Guardar Publicación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <footer class="bg-white border-t py-4 mt-10 w-full">
+        <div class="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-sm text-blue-900">
+            <div class="flex items-center gap-2">
+                <img src="https://www.tecsup.edu.pe/wp-content/uploads/2024/07/Group-680.png" alt="TECSUP Logo" class="h-6 w-auto">
+                <span>TECSUP &copy; 2025</span>
+            </div>
+            <span class="mt-2 md:mt-0">Plataforma Institucional de Publicaciones</span>
+        </div>
+    </footer>
+    <script>
+        // Verificar autenticación al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Debe iniciar sesión para crear publicaciones');
+                window.location.href = 'login.html';
+                return;
+            }
+            cargarCarreras();
+            cargarDepartamentos();
+        });
+
+        function cambiarTipoPublicacion() {
+            const type = document.getElementById('publicationType').value;
+            document.getElementById('anuncioFields').style.display = 'none';
+            document.getElementById('eventoFields').style.display = 'none';
+            document.getElementById('webinarFields').style.display = 'none';
+            
+            // Show the fields for the selected type
+            document.getElementById(type + 'Fields').style.display = 'block';
+
+            // Update required attributes
+            setRequiredFields(type);
+        }
+
+        function setRequiredFields(type) {
+            // Reset all required fields
+            const allFields = document.querySelectorAll('input, select, textarea');
+            allFields.forEach(field => field.required = false);
+
+            // Set common required fields
+            document.getElementById('titulo').required = true;
+            document.getElementById('contenido').required = true;
+
+            // Set type-specific required fields
+            switch(type) {
+                case 'anuncio':
+                    document.getElementById('tipo').required = true;
+                    const tipoAnuncio = document.getElementById('tipo').value;
+                    if (tipoAnuncio === 'CAR') document.getElementById('carrera').required = true;
+                    if (tipoAnuncio === 'DEP') document.getElementById('departamento').required = true;
+                    break;
+                case 'evento':
+                    document.getElementById('fecha').required = true;
+                    document.getElementById('lugar').required = true;
+                    document.getElementById('capacidad').required = true;
+                    break;
+                case 'webinar':
+                    document.getElementById('fechaWebinar').required = true;
+                    document.getElementById('plataforma').required = true;
+                    document.getElementById('enlace').required = true;
+                    document.getElementById('ponente').required = true;
+                    break;
+            }
+        }
+
+        function mostrarCamposAdicionales() {
+            const tipo = document.getElementById('tipo').value;
+            document.getElementById('carreraDiv').style.display = tipo === 'CAR' ? 'block' : 'none';
+            document.getElementById('departamentoDiv').style.display = tipo === 'DEP' ? 'block' : 'none';
+            setRequiredFields('anuncio');
+        }
+
+        function cargarCarreras() {
+            const token = localStorage.getItem('token');
+            fetch('/api/carreras', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => response.json())
+            .then(carreras => {
+                const select = document.getElementById('carrera');
+                carreras.forEach(carrera => {
+                    const option = document.createElement('option');
+                    option.value = carrera.id;
+                    option.textContent = carrera.nombre;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error cargando carreras:', error));
+        }
+
+        function cargarDepartamentos() {
+            const token = localStorage.getItem('token');
+            fetch('/api/departamentos', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(response => response.json())
+            .then(departamentos => {
+                const select = document.getElementById('departamento');
+                departamentos.forEach(depto => {
+                    const option = document.createElement('option');
+                    option.value = depto.id;
+                    option.textContent = depto.nombre;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error cargando departamentos:', error));
+        }
+
+        async function crearPublicacion(event) {
+            event.preventDefault();
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('No está autenticado. Por favor, inicie sesión.');
+                window.location.href = 'login.html';
+                return;
+            }
+            const type = document.getElementById('publicationType').value;
+            let endpoint = '';
+            let data = {};
+            data.titulo = document.getElementById('titulo').value;
+            // Subir imagen si se seleccionó
+            let imagenUrl = '';
+            const fileInput = document.getElementById('imagen');
+            if (fileInput.files && fileInput.files[0]) {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                try {
+                    const uploadResp = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + token },
+                        body: formData
+                    });
+                    if (uploadResp.ok) {
+                        imagenUrl = await uploadResp.text();
+                    } else {
+                        alert('Error al subir la imagen.');
+                        return;
+                    }
+                } catch (e) {
+                    alert('Error al subir la imagen.');
+                    return;
+                }
+            }
+            switch(type) {
+                case 'anuncio':
+                    endpoint = '/api/anuncios';
+                    data.contenido = document.getElementById('contenido').value;
+                    data.tipo = document.getElementById('tipo').value;
+                    if (data.tipo === 'CAR') {
+                        data.carrera = { id: document.getElementById('carrera').value };
+                    } else if (data.tipo === 'DEP') {
+                        data.departamento = { id: document.getElementById('departamento').value };
+                    }
+                    if (imagenUrl) data.imagen = imagenUrl;
+                    break;
+                case 'evento':
+                    endpoint = '/api/eventos';
+                    data = {
+                        titulo: document.getElementById('titulo').value,
+                        descripcion: document.getElementById('contenido').value,
+                        fechaInicio: document.getElementById('fecha').value,
+                        ubicacion: document.getElementById('lugar').value,
+                        capacidad: parseInt(document.getElementById('capacidad').value)
+                    };
+                    const fechaInicio = new Date(data.fechaInicio);
+                    const fechaFin = new Date(fechaInicio.getTime() + (2 * 60 * 60 * 1000));
+                    data.fechaFin = fechaFin.toISOString().slice(0, 16);
+                    if (imagenUrl) data.imagen = imagenUrl;
+                    break;
+                case 'webinar':
+                    endpoint = '/api/webinars';
+                    data = {
+                        titulo: document.getElementById('titulo').value,
+                        descripcion: document.getElementById('contenido').value,
+                        fecha: document.getElementById('fechaWebinar').value,
+                        plataforma: document.getElementById('plataforma').value,
+                        enlace: document.getElementById('enlace').value,
+                        expositor: document.getElementById('ponente').value
+                    };
+                    if (imagenUrl) data.imagen = imagenUrl;
+                    break;
+            }
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error('Error response:', text);
+                        if (response.status === 401) {
+                            throw new Error('No autorizado. Por favor, inicie sesión nuevamente.');
+                        }
+                        throw new Error(text || 'Error al crear la publicación');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Respuesta exitosa:', data);
+                alert('Publicación creada exitosamente');
+                window.location.href = 'listar-anuncios.html';
+            })
+            .catch(error => {
+                console.error('Error detallado:', error);
+                if (error.message.includes('No autorizado')) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                } else {
+                    alert(error.message || 'Error al crear la publicación');
+                }
+            });
+        }
+
+        // Initialize the form
+        cambiarTipoPublicacion();
+    </script>
+</body>
+</html>
