@@ -1,9 +1,8 @@
-// src/components/PerfilPage.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Container, Row, Col, Card, Button, Alert, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Alert, Spinner, Image } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // Asegúrate de haberlo instalado
+import { jwtDecode } from 'jwt-decode';
 
 const API_BASE_URL = 'http://localhost:8080/api'; // URL base de tu API
 
@@ -13,6 +12,8 @@ function PerfilPage() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [userEmail, setUserEmail] = useState(null); // Para mostrar el correo
+    const [userProfilePic, setUserProfilePic] = useState(null); // Para la foto de perfil
 
     // Función para obtener los headers de autorización
     const getAuthHeaders = () => {
@@ -20,29 +21,30 @@ function PerfilPage() {
         return token ? { Authorization: `Bearer ${token}` } : {};
     };
 
-    // 1. Decodificar el token para obtener el ID del usuario
+    // 1. Decodificar el token para obtener el ID, email y foto de perfil del usuario
     useEffect(() => {
         const token = localStorage.getItem('jwtToken');
         if (token) {
             try {
                 const decodedToken = jwtDecode(token);
-                // ATENCIÓN: Ajusta 'decodedToken.sub' si tu JWT usa otro campo para el ID del usuario.
-                // Asumimos que 'sub' es el ID numérico del usuario.
-                setCurrentUserId(decodedToken.sub);
+                setCurrentUserId(decodedToken.sub); // Asumimos 'sub' es el ID numérico del usuario
+                setUserEmail(decodedToken.email); // Asumimos 'email' es el correo del usuario
+                // Asumimos 'picture' es la URL de la foto de perfil de Google
+                setUserProfilePic(decodedToken.picture || 'https://via.placeholder.com/150?text=Perfil');
             } catch (err) {
                 console.error("Error decodificando el token:", err);
                 setError("Token inválido. Por favor, inicie sesión de nuevo.");
-                localStorage.removeItem('jwtToken'); // Token inválido, cerrar sesión
+                localStorage.removeItem('jwtToken');
                 navigate('/login');
             }
         } else {
-            navigate('/login'); // No hay token, redirigir a login
+            navigate('/login');
         }
     }, [navigate]);
 
     // Función para cargar los eventos del usuario
     const fetchUserEvents = async () => {
-        if (!currentUserId) return; // Esperar a que el userId esté disponible
+        if (!currentUserId) return;
 
         setLoading(true);
         setError(null);
@@ -77,13 +79,11 @@ function PerfilPage() {
                 await axios.delete(`${API_BASE_URL}/eventos/${eventId}`, {
                     headers: getAuthHeaders()
                 });
-                // Si la eliminación es exitosa, recargar la lista de eventos
                 alert('Evento eliminado con éxito.');
-                fetchUserEvents(); // Vuelve a cargar los eventos para actualizar la lista
+                fetchUserEvents();
             } catch (err) {
                 console.error('Error al eliminar el evento:', err);
                 if (err.response) {
-                    // Mensajes de error más específicos del backend
                     if (err.response.status === 401) {
                         setError('No autorizado. Por favor, inicie sesión de nuevo.');
                         localStorage.removeItem('jwtToken');
@@ -123,12 +123,29 @@ function PerfilPage() {
 
     return (
         <Container className="my-5">
-            <h1 className="text-center mb-4">Mis Eventos Creados</h1>
+            <Row className="justify-content-center mb-5">
+                <Col md={8} className="text-center">
+                    <Image
+                        src={userProfilePic}
+                        roundedCircle
+                        style={{ width: '150px', height: '150px', objectFit: 'cover', border: '3px solid #007bff' }}
+                        className="mb-3 shadow-sm"
+                    />
+                    <h1 className="mb-1">Perfil de Usuario</h1>
+                    {userEmail && <p className="text-muted lead">{userEmail}</p>}
+                    <hr />
+                    <Button variant="success" onClick={() => navigate('/evento/new')} className="mt-3">
+                        Crear Nuevo Evento
+                    </Button>
+                </Col>
+            </Row>
+
+            <h2 className="text-center mb-4">Mis Eventos Creados</h2>
             <Row className="justify-content-center">
                 {userEvents.length > 0 ? (
                     userEvents.map(event => (
                         <Col key={event.id} md={6} lg={4} className="mb-4">
-                            <Card className="event-card-profile h-100">
+                            <Card className="event-card-profile h-100 shadow-sm border-0">
                                 <Card.Img
                                     variant="top"
                                     src={event.imagen ? `http://localhost:8080/uploads/${event.imagen}` : 'https://via.placeholder.com/400x200?text=Sin+Imagen'}
@@ -136,27 +153,27 @@ function PerfilPage() {
                                     style={{ height: '200px', objectFit: 'cover' }}
                                 />
                                 <Card.Body className="d-flex flex-column">
-                                    <Card.Title>{event.titulo}</Card.Title>
-                                    <Card.Text>
-                                        <p><strong>Descripción:</strong> {event.descripcion.substring(0, Math.min(event.descripcion.length, 100))}...</p>
-                                        <p><strong>Ubicación:</strong> {event.ubicacion}</p>
-                                        <p><strong>Capacidad:</strong> {event.capacidad}</p>
-                                        {event.fechaInicio && <p><strong>Fecha Inicio:</strong> {new Date(event.fechaInicio).toLocaleDateString()}</p>}
-                                        {event.fechaFin && <p><strong>Fecha Fin:</strong> {new Date(event.fechaFin).toLocaleDateString()}</p>}
-                                        {event.carrera && <p><strong>Carrera:</strong> {event.carrera.nombre}</p>}
+                                    <Card.Title className="text-primary">{event.titulo}</Card.Title>
+                                    <Card.Text className="text-muted small mb-2">
+                                        <p className="mb-1"><strong>Descripción:</strong> {event.descripcion.substring(0, Math.min(event.descripcion.length, 100))}...</p>
+                                        <p className="mb-1"><strong>Ubicación:</strong> {event.ubicacion}</p>
+                                        <p className="mb-1"><strong>Capacidad:</strong> {event.capacidad}</p>
+                                        {event.fechaInicio && <p className="mb-1"><strong>Fecha Inicio:</strong> {new Date(event.fechaInicio).toLocaleDateString()}</p>}
+                                        {event.fechaFin && <p className="mb-1"><strong>Fecha Fin:</strong> {new Date(event.fechaFin).toLocaleDateString()}</p>}
+                                        {event.carrera && <p className="mb-1"><strong>Carrera:</strong> {event.carrera.nombre}</p>}
                                     </Card.Text>
-                                    <div className="mt-auto d-flex justify-content-between"> {/* d-flex y justify-content-between para alinear botones */}
-                                        <Button variant="primary" onClick={() => navigate(`/eventos/${event.id}`)}>
+                                    <div className="mt-auto d-flex justify-content-between pt-3 border-top">
+                                        <Button variant="outline-primary" size="sm" onClick={() => navigate(`/eventos/${event.id}`)}>
                                             Ver Detalles
                                         </Button>
-                                        <Button variant="warning" className="ms-2" onClick={() => navigate(`/edit-evento/${event.id}`)}>
+                                        <Button variant="outline-warning" size="sm" className="ms-2" onClick={() => navigate(`/edit-evento/${event.id}`)}>
                                             Editar
                                         </Button>
-                                        {/* Botón de Eliminar */}
                                         <Button
-                                            variant="danger"
+                                            variant="outline-danger"
+                                            size="sm"
                                             className="ms-2"
-                                            onClick={() => handleDeleteEvent(event.id)} // Llama a la nueva función
+                                            onClick={() => handleDeleteEvent(event.id)}
                                         >
                                             Eliminar
                                         </Button>
@@ -167,7 +184,7 @@ function PerfilPage() {
                     ))
                 ) : (
                     <Col xs={12}>
-                        <Alert variant="info" className="text-center">No has creado ningún evento aún.</Alert>
+                        <Alert variant="info" className="text-center shadow-sm">No has creado ningún evento aún.</Alert>
                         <div className="text-center mt-3">
                             <Button variant="success" onClick={() => navigate('/evento/new')}>
                                 Crear Nuevo Evento
