@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Table, Alert, InputGroup, FormControl } from 'react-bootstrap';
 import { FaSearch } from 'react-icons/fa';
-
+import '..styles/DepartamentosPage.css'; 
 const API_URL_DEPARTAMENTOS = 'http://localhost:8080/api/departamentos';
 
 function DepartamentosPage() {
