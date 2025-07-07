@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Table, Alert, InputGroup, FormControl } from 'react-bootstrap';
+import { Container, Row, Col, InputGroup, FormControl, Button } from 'react-bootstrap';
 import { FaSearch } from 'react-icons/fa';
-import '..styles/DepartamentosPage.css'; 
+import '../styles/DepartamentosPage.css';
+
 const API_URL_DEPARTAMENTOS = 'http://localhost:8080/api/departamentos';
 
 function DepartamentosPage() {
@@ -45,6 +46,7 @@ function DepartamentosPage() {
     const filteredDepartamentos = departamentos.filter(departamento =>
         departamento.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (departamento.codigo && departamento.codigo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        // Si el responsable no se va a mostrar, puedes considerar quitarlo también del filtro de búsqueda
         (departamento.responsable && departamento.responsable.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
@@ -59,8 +61,8 @@ function DepartamentosPage() {
                 </Col>
             </Row>
 
-            <Row className="mb-4">
-                <Col>
+            <Row className="mb-4 justify-content-center">
+                <Col md={6}>
                     <InputGroup>
                         <FormControl
                             placeholder="Buscar por nombre, código o responsable..."
@@ -74,37 +76,38 @@ function DepartamentosPage() {
                 </Col>
             </Row>
 
-            <Row>
-                <Col>
-                    <div className="table-responsive">
-                        <Table striped bordered hover className="departamentos-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Código</th>
-                                    <th>Nombre</th>
-                                    <th>Responsable</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredDepartamentos.length > 0 ? (
-                                    filteredDepartamentos.map((departamento) => (
-                                        <tr key={departamento.id}>
-                                            <td>{departamento.id}</td>
-                                            <td>{departamento.codigo}</td>
-                                            <td>{departamento.nombre}</td>
-                                            <td>{departamento.responsable || 'N/A'}</td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" className="text-center">No se encontraron departamentos.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </Table>
-                    </div>
-                </Col>
+            <Row className="departamentos-cards-grid">
+                {filteredDepartamentos.length > 0 ? (
+                    filteredDepartamentos.map((departamento) => (
+                        <Col key={departamento.id} lg={4} md={6} sm={12} className="mb-4">
+                            <div className="departamento-card">
+                                {/* Opcional: Eliminar o comentar la etiqueta de categoría si no se usa */}
+                                {/* <div className="departamento-card-tag">
+                                    Departamentos
+                                </div> */}
+                                <div className="departamento-card-details">
+                                    <h5 className="departamento-card-code">{departamento.codigo}</h5>
+                                    <h4 className="departamento-card-title">{departamento.nombre}</h4>
+                                    {/* COMENTA O ELIMINA ESTA LÍNEA para ocultar el responsable */}
+                                    {/*
+                                    <p className="departamento-card-responsible">
+                                        Responsable: {departamento.responsable || 'N/A'}
+                                    </p>
+                                    */}
+                                </div>
+                                <div className="departamento-card-footer">
+                                    <Button variant="primary" onClick={() => navigate(`/departamentos/${departamento.id}`)}>
+                                        Ver Detalles
+                                    </Button>
+                                </div>
+                            </div>
+                        </Col>
+                    ))
+                ) : (
+                    <Col xs={12}>
+                        <Alert variant="info" className="text-center">No se encontraron departamentos.</Alert>
+                    </Col>
+                )}
             </Row>
         </Container>
     );

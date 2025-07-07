@@ -1,0 +1,87 @@
+/* DepartamentosPage.css */
+
+.departamentos-page-container {
+    padding: 20px;
+}
+
+.departamentos-cards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Espacio entre las tarjetas */
+    justify-content: center; /* Centrar las tarjetas si no llenan la fila */
+}
+
+.departamento-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    height: 100%; /* Asegura que todas las tarjetas tengan la misma altura */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Empuja el footer hacia abajo */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.departamento-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.departamento-card-tag {
+    background-color: #007bff; /* Color similar al de la etiqueta en el diseño */
+    color: white;
+    padding: 5px 10px;
+    font-size: 0.85em;
+    font-weight: bold;
+    border-top-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    position: absolute; /* Posiciona la etiqueta en la esquina */
+    top: 0;
+    left: 0;
+    z-index: 1; /* Asegura que esté por encima de otros elementos si los hubiera */
+}
+
+/* Si quisieras una imagen de fondo o un espacio para imagen (no implementado en JS porque no hay campo) */
+/* .departamento-card-image-placeholder {
+    height: 180px;
+    background-color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    color: #777;
+} */
+
+.departamento-card-details {
+    padding: 15px;
+    flex-grow: 1; /* Permite que el contenido ocupe el espacio disponible */
+}
+
+.departamento-card-code {
+    color: #6c757d; /* Color gris para el código */
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.departamento-card-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #343a40;
+    margin-bottom: 10px;
+}
+
+.departamento-card-responsible {
+    font-size: 0.95em;
+    color: #555;
+}
+
+.departamento-card-footer {
+    padding: 15px;
+    border-top: 1px solid #eee;
+    text-align: right; /* Alinea el botón a la derecha */
+}
+
+.departamento-card-footer .btn {
+    width: auto; /* Permite que el botón se ajuste a su contenido */
+}
