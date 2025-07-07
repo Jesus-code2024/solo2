@@ -37,19 +37,23 @@ const OAuth2RedirectHandler = () => {
         const token = urlParams.get('token');
         const error = urlParams.get('error');
 
-        if (token) {
-            localStorage.setItem('jwtToken', token);
-            window.dispatchEvent(new Event('storage'));
-            navigate('/home', { replace: true });
-        } else if (error) {
-            navigate('/login', {
-                state: { error: 'Error de autenticación: ' + error },
-                replace: true,
-            });
-        } else {
-            navigate('/login', { replace: true });
-        }
-    }, [location, navigate]);
+    if (token) {
+      localStorage.setItem('jwtToken', token);
+      
+      // Dispara múltiples eventos para asegurar sincronización
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('localStorageChange'));
+      
+      navigate('/home', { replace: true });
+    } else if (error) {
+      navigate('/login', {
+        state: { error: 'Error de autenticación: ' + error },
+        replace: true,
+      });
+    } else {
+      navigate('/login', { replace: true });
+    }
+  }, [location, navigate]);
 
     return (
         <div style={{ textAlign: 'center', padding: '50px', minHeight: '100vh', backgroundColor: '#f0f0f0' }}>
@@ -60,22 +64,19 @@ const OAuth2RedirectHandler = () => {
 };
 
 // 🛡️ Ruta protegida con navbar
-const ProtectedRoute = () => {
-    const token = localStorage.getItem('jwtToken');
-    const isAuthenticated = token && token.length > 0;
-
-    return isAuthenticated ? (
-        <>
-            <MainNavbar />
-            {/* Contenedor para el contenido principal y para empujar el footer hacia abajo */}
-            <div className="main-content" style={{ minHeight: 'calc(100vh - 120px)' }}> {/* Ajusta 120px a la altura combinada de tu navbar y footer */}
-                <Outlet />
-            </div>
-            <Footer />
-        </>
-    ) : (
-        <Navigate to="/login" replace />
-    );
+const ProtectedRoute = ({ isAuthenticated }) => {
+  return isAuthenticated ? (
+    <>
+      <MainNavbar />
+      {/* Contenedor para el contenido principal y para empujar el footer hacia abajo */}
+      <div className="main-content" style={{ minHeight: 'calc(100vh - 120px)' }}> {/* Ajusta 120px a la altura combinada de tu navbar y footer */}
+        <Outlet />
+      </div>
+      <Footer /> {/* <-- Mueve el Footer aquí dentro de ProtectedRoute */}
+    </>
+  ) : (
+    <Navigate to="/login" replace />
+  );
 };
 
 function App() {
@@ -91,28 +92,36 @@ function App() {
             setAuthenticatedUser(isAuth);
         };
 
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    // Escucha eventos de almacenamiento locales
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Escucha eventos personalizados para cambios internos
+    window.addEventListener('localStorageChange', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('localStorageChange', handleStorageChange);
+    };
+  }, []);
 
     const isAuthenticated = () => authenticatedUser;
 
-    return (
-        <Router>
-            <Routes>
-                {/* 👤 Página de login */}
-                <Route
-                    path="/login"
-                    element={isAuthenticated() ? <Navigate to="/home" replace /> : <AuthPage />}
-                />
+  return (
+    <Router>
+      <Routes>
+        {/* 👤 Página de login */}
+        <Route
+          path="/login"
+          element={isAuthenticated() ? <Navigate to="/home" replace /> : <AuthPage />}
+        />
 
                 {/* 🌀 Ruta de redirección OAuth2 */}
                 <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
-                {/* 🔒 TODAS LAS RUTAS PROTEGIDAS VAN AQUI DENTRO */}
-                <Route element={<ProtectedRoute />}>
-                    <Route path="/" element={<Navigate to="/home" replace />} />
-                    <Route path="/home" element={<HomePage />} />
+        {/* 🔒 TODAS LAS RUTAS PROTEGIDAS VAN AQUI DENTRO */}
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated()} />}>
+          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/home" element={<HomePage />} />
 
                     <Route path="/publications" element={<PublicationsPage />} />
                     <Route path="/publications/new" element={<CreatePublicationPage />} />

@@ -23,7 +23,7 @@ export const register = async (userData) => {
 
 
 axios.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('jwtToken'); // Cambiado de 'token' a 'jwtToken'
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
