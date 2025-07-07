@@ -18,15 +18,14 @@ import HomePage from './components/HomePage';
 import CarrerasPage from './components/CarrerasPage';
 import DepartamentosPage from './components/DepartamentosPage';
 import EventosPage from './components/EventosPage';
-import WebinarsPage from './components/WebinarPage';
+import WebinarsPage from './components/WebinarPage'; // Asegúrate de que esto sea correcto, antes era WebinarsPage
 import CreateEventoPage from './components/CreateEventoPage';
 import EditEventoPage from './components/EditEventoPage';
 import CreateWebinarPage from './components/CreateWebinarPage';
 import EditWebinarPage from './components/EditWebinarPage';
 import Footer from './components/Footer';
 import DetalleItemPage from './components/DetalleItemPage';
-import PerfilPage from './components/PerfilPage'; 
-
+import PerfilPage from './components/PerfilPage';
 
 const OAuth2RedirectHandler = () => {
     const location = useLocation();
@@ -157,9 +156,11 @@ function App() {
                     <Route path="/eventos/:id" element={<DetalleItemPage />} />
                     <Route path="/webinars/:id" element={<DetalleItemPage />} />
 
-                    {/* ¡NUEVA RUTA PARA EL PERFIL! */}
+                    {/* ¡ACTUALIZACIÓN AQUÍ PARA "MIS EVENTOS" Y "MIS WEBINARS"! */}
+                    {/* Si PerfilPage ya lista eventos/webinars del usuario, redirige a ella */}
                     <Route path="/perfil" element={<PerfilPage />} />
-
+                    <Route path="/eventos/mis-eventos" element={<PerfilPage />} />
+                    <Route path="/webinars/mis-webinars" element={<PerfilPage />} />
 
                     {/* 🌐 Ruta comodín protegida */}
                     <Route path="*" element={<Navigate to="/home" replace />} />

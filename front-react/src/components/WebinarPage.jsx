@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Alert, Form, Button, Modal, Card, Badge, Toast, ToastContainer } from 'react-bootstrap';
-import { 
-    FaSearch, 
-    FaVideo, 
-    FaCalendarAlt, 
-    FaUser, 
+import { Container, Row, Col, Alert, Form, Button, Modal, Card, Badge } from 'react-bootstrap';
+import {
+    FaSearch,
+    FaVideo,
+    FaCalendarAlt,
+    FaUser,
     FaLink,
     FaFilter,
     FaTimes,
@@ -20,18 +20,17 @@ import {
     FaPlay,
     FaInfoCircle,
     FaPlus,
-    FaEdit,
-    FaTrash,
+    // FaEdit, // Eliminado
+    // FaTrash, // Eliminado
     FaExternalLinkAlt,
     FaLaptop,
     FaMicrophone,
-    FaEye,
-    FaSync
+    FaEye
 } from 'react-icons/fa';
 import '../styles/WebinarsPage.css';
 
-const API_URL_WEBINARS = 'http://localhost:8080/api/webinars'; 
-const BASE_URL = 'http://localhost:8080'; 
+const API_URL_WEBINARS = 'http://localhost:8080/api/webinars';
+const BASE_URL = 'http://localhost:8080';
 
 const formatLocalDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'N/A';
@@ -52,10 +51,8 @@ function WebinarsPage() {
     const [showModal, setShowModal] = useState(false);
     const [favorites, setFavorites] = useState([]);
     const [viewMode, setViewMode] = useState('grid');
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [webinarToDelete, setWebinarToDelete] = useState(null);
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
+    // const [showDeleteModal, setShowDeleteModal] = useState(false); // Eliminado
+    // const [webinarToDelete, setWebinarToDelete] = useState(null); // Eliminado
     const navigate = useNavigate();
 
     const getAuthHeaders = () => {
@@ -67,9 +64,7 @@ function WebinarsPage() {
         setLoading(true);
         setError(null);
         try {
-            console.log('Fetching webinars from:', API_URL_WEBINARS);
             const response = await axios.get(API_URL_WEBINARS, { headers: getAuthHeaders() });
-            console.log('Webinars response:', response.data);
             setWebinars(response.data);
         } catch (err) {
             console.error('Error al cargar los webinars:', err);
@@ -94,120 +89,38 @@ function WebinarsPage() {
         }
     }, []);
 
-    // Agregar un efecto para refrescar cuando se vuelve a la página
-    useEffect(() => {
-        const handleFocus = () => {
-            fetchWebinars();
-        };
-        
-        window.addEventListener('focus', handleFocus);
-        return () => window.removeEventListener('focus', handleFocus);
-    }, []);
-
-    // Refrescar cuando se navega a esta página
-    useEffect(() => {
-        const unsubscribe = () => {
-            fetchWebinars();
-        };
-        
-        // Escuchar cambios en la navegación
-        window.addEventListener('popstate', unsubscribe);
-        return () => window.removeEventListener('popstate', unsubscribe);
-    }, []);
-
-    // Detectar si se debe refrescar por creación/edición de webinar
-    useEffect(() => {
-        const shouldRefresh = sessionStorage.getItem('webinarCreated') || sessionStorage.getItem('webinarUpdated');
-        if (shouldRefresh) {
-            fetchWebinars();
-            if (sessionStorage.getItem('webinarCreated')) {
-                setToastMessage('¡Webinar creado exitosamente!');
-                setShowToast(true);
-                sessionStorage.removeItem('webinarCreated');
-            }
-            if (sessionStorage.getItem('webinarUpdated')) {
-                setToastMessage('¡Webinar actualizado exitosamente!');
-                setShowToast(true);
-                sessionStorage.removeItem('webinarUpdated');
-            }
-        }
-    }, []);
-
-    // Monitorear cambios en sessionStorage
-    useEffect(() => {
-        const handleStorageChange = (e) => {
-            if (e.key === 'webinarCreated' || e.key === 'webinarUpdated') {
-                fetchWebinars();
-                sessionStorage.removeItem('webinarCreated');
-                sessionStorage.removeItem('webinarUpdated');
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
-
     const handleCreateWebinarClick = () => {
-        navigate('/webinar/new'); 
+        navigate('/webinar/new');
     };
 
-    // Función para refrescar manualmente los webinars
-    const handleRefreshWebinars = () => {
-        fetchWebinars();
-    };
+    // Funciones handleEditClick y handleDeleteClick eliminadas
+    // const handleEditClick = (id) => {
+    //      navigate(`/edit-webinar/${id}`);
+    // };
 
-    // Función de diagnóstico
-    const runDiagnostic = () => {
-        console.log('=== DIAGNÓSTICO DE WEBINARS ===');
-        console.log('Token JWT:', localStorage.getItem('jwtToken') ? 'Presente' : 'Ausente');
-        console.log('URL API:', API_URL_WEBINARS);
-        console.log('Total webinars cargados:', webinars.length);
-        console.log('Webinars:', webinars);
-        console.log('Filtros activos:', { selectedWebinarType, searchTerm, sortBy });
-        console.log('Webinars filtrados:', sortedAndFilteredWebinars.length);
-        console.log('Estado de carga:', { loading, error });
-        
-        // Verificar conexión a la API
-        axios.get(API_URL_WEBINARS, { headers: getAuthHeaders() })
-            .then(response => {
-                console.log('✅ Conexión API exitosa. Datos recibidos:', response.data.length, 'webinars');
-                console.log('Datos completos:', response.data);
-            })
-            .catch(err => {
-                console.log('❌ Error en conexión API:', err);
-                console.log('Status:', err.response?.status);
-                console.log('Data:', err.response?.data);
-            });
-    };
+    // const handleDeleteClick = (webinar) => {
+    //      setWebinarToDelete(webinar);
+    //      setShowDeleteModal(true);
+    // };
 
-    const handleEditClick = (id) => {
-        navigate(`/edit-webinar/${id}`); 
-    };
-
-    const handleDeleteClick = (webinar) => {
-        setWebinarToDelete(webinar);
-        setShowDeleteModal(true);
-    };
-
-    const confirmDelete = async () => {
-        if (webinarToDelete) {
-            try {
-                await axios.delete(`${API_URL_WEBINARS}/${webinarToDelete.id}`, { headers: getAuthHeaders() });
-                setShowDeleteModal(false);
-                setWebinarToDelete(null);
-                fetchWebinars();
-                setToastMessage('Webinar eliminado con éxito.');
-                setShowToast(true);
-            } catch (err) {
-                console.error('Error al eliminar el webinar:', err);
-                if (err.response && err.response.status === 403) {
-                    alert('No tienes permiso para eliminar este webinar (solo el autor puede).');
-                } else {
-                    alert('Hubo un error al eliminar el webinar. Por favor, intente de nuevo.');
-                }
-            }
-        }
-    };
+    // Función confirmDelete eliminada
+    // const confirmDelete = async () => {
+    //      if (webinarToDelete) {
+    //          try {
+    //              await axios.delete(`${API_URL_WEBINARS}/${webinarToDelete.id}`, { headers: getAuthHeaders() });
+    //              setShowDeleteModal(false);
+    //              setWebinarToDelete(null);
+    //              fetchWebinars();
+    //          } catch (err) {
+    //              console.error('Error al eliminar el webinar:', err);
+    //              if (err.response && err.response.status === 403) {
+    //                  alert('No tienes permiso para eliminar este webinar (solo el autor puede).');
+    //              } else {
+    //                  alert('Hubo un error al eliminar el webinar. Por favor, intente de nuevo.');
+    //              }
+    //          }
+    //      }
+    // };
 
     const handleViewDetailsClick = (webinar) => {
         setSelectedWebinar(webinar);
@@ -218,7 +131,7 @@ function WebinarsPage() {
         const newFavorites = favorites.includes(webinarId)
             ? favorites.filter(id => id !== webinarId)
             : [...favorites, webinarId];
-        
+
         setFavorites(newFavorites);
         localStorage.setItem('webinarFavorites', JSON.stringify(newFavorites));
     };
@@ -241,7 +154,7 @@ function WebinarsPage() {
         const now = new Date();
         const webinarDate = new Date(webinar.fecha);
         const hoursDiff = (webinarDate - now) / (1000 * 60 * 60);
-        
+
         if (hoursDiff > 24) return 'upcoming';
         if (hoursDiff > 0) return 'soon';
         if (hoursDiff > -2) return 'live';
@@ -274,13 +187,13 @@ function WebinarsPage() {
                 (webinar.descripcion && webinar.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (webinar.expositor && webinar.expositor.toLowerCase().includes(searchTerm.toLowerCase())) ||
                 (webinar.autor && webinar.autor.username.toLowerCase().includes(searchTerm.toLowerCase()));
-            
-            const matchesType = selectedWebinarType === 'all' || 
+
+            const matchesType = selectedWebinarType === 'all' ||
                 (selectedWebinarType === 'upcoming' && getWebinarStatus(webinar) === 'upcoming') ||
                 (selectedWebinarType === 'live' && getWebinarStatus(webinar) === 'live') ||
                 (selectedWebinarType === 'finished' && getWebinarStatus(webinar) === 'finished') ||
                 (selectedWebinarType === 'favorites' && favorites.includes(webinar.id));
-            
+
             return matchesSearch && matchesType;
         })
         .sort((a, b) => {
@@ -296,12 +209,13 @@ function WebinarsPage() {
             }
         });
 
-    const filteredWebinars = webinars.filter(webinar =>
-        webinar.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (webinar.descripcion && webinar.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (webinar.expositor && webinar.expositor.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (webinar.autor && webinar.autor.username.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    // La variable filteredWebinars no se estaba usando en el render, pero la dejé comentada en caso de que la necesitaras en el futuro.
+    // const filteredWebinars = webinars.filter(webinar =>
+    //      webinar.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    //      (webinar.descripcion && webinar.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    //      (webinar.expositor && webinar.expositor.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    //      (webinar.autor && webinar.autor.username.toLowerCase().includes(searchTerm.toLowerCase()))
+    // );
 
     if (loading) {
         return (
@@ -340,9 +254,7 @@ function WebinarsPage() {
                             <p>Participa en webinars educativos y conferencias en línea</p>
                         </Col>
                         <Col md={4} className="text-md-end">
-                            {/* Eliminar o comentar este botón: */}
-                            {/*
-                            <Button 
+                            <Button
                                 variant="outline-light"
                                 onClick={handleCreateWebinarClick}
                                 className="create-webinar-btn"
@@ -350,10 +262,7 @@ function WebinarsPage() {
                                 <FaPlus style={{ marginRight: '8px' }} />
                                 Crear Webinar
                             </Button>
-                            */}
-                            {/* Eliminar o comentar este botón: */}
-                            {/*
-                            <Button 
+                            <Button
                                 variant="outline-light"
                                 onClick={() => setShowFilters(!showFilters)}
                                 className="filters-btn"
@@ -361,7 +270,6 @@ function WebinarsPage() {
                                 <FaFilter style={{ marginRight: '8px' }} />
                                 Filtros
                             </Button>
-                            */}
                         </Col>
                     </Row>
                 </div>
@@ -390,9 +298,7 @@ function WebinarsPage() {
                     </div>
                 </div>
 
-
                 {/* Search and Filters */}
-                {/* Si no quieres los filtros, puedes comentar o eliminar toda la sección `search-section` */}
                 <div className="search-section">
                     <div className="search-container">
                         <Form.Control
@@ -404,42 +310,13 @@ function WebinarsPage() {
                         />
                         <FaSearch className="search-icon" />
                     </div>
-                    
-                    {/* Botones de acción */}
-                    <div className="action-buttons" style={{ marginTop: '15px', textAlign: 'center' }}>
-                        <Button 
-                            variant="primary" 
-                            onClick={handleCreateWebinarClick}
-                            style={{ marginRight: '10px' }}
-                        >
-                            <FaPlus style={{ marginRight: '8px' }} />
-                            Crear Webinar
-                        </Button>
-                        <Button 
-                            variant="outline-secondary" 
-                            onClick={handleRefreshWebinars}
-                            disabled={loading}
-                            style={{ marginRight: '10px' }}
-                        >
-                            <FaSync className={loading ? 'fa-spin' : ''} style={{ marginRight: '8px' }} />
-                            {loading ? 'Refrescando...' : 'Refrescar'}
-                        </Button>
-                        <Button 
-                            variant="outline-info" 
-                            onClick={() => setShowFilters(!showFilters)}
-                        >
-                            <FaFilter style={{ marginRight: '8px' }} />
-                            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-                        </Button>
-                    </div>
 
-                    {/* También puedes comentar o eliminar completamente esta sección `filters-section` si no quieres que aparezca el formulario de filtros al hacer clic */}
                     {showFilters && (
                         <div className="filters-section">
                             <Row>
                                 <Col md={4}>
-                                    <Form.Select 
-                                        value={selectedWebinarType} 
+                                    <Form.Select
+                                        value={selectedWebinarType}
                                         onChange={(e) => setSelectedWebinarType(e.target.value)}
                                         className="filter-select"
                                     >
@@ -451,8 +328,8 @@ function WebinarsPage() {
                                     </Form.Select>
                                 </Col>
                                 <Col md={4}>
-                                    <Form.Select 
-                                        value={sortBy} 
+                                    <Form.Select
+                                        value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
                                         className="filter-select"
                                     >
@@ -463,14 +340,14 @@ function WebinarsPage() {
                                 </Col>
                                 <Col md={4}>
                                     <div className="view-mode-toggle">
-                                        <Button 
+                                        <Button
                                             variant={viewMode === 'grid' ? 'primary' : 'outline-primary'}
                                             onClick={() => setViewMode('grid')}
                                             style={{ marginRight: '8px' }}
                                         >
                                             Grid
                                         </Button>
-                                        <Button 
+                                        <Button
                                             variant={viewMode === 'list' ? 'primary' : 'outline-primary'}
                                             onClick={() => setViewMode('list')}
                                         >
@@ -487,39 +364,16 @@ function WebinarsPage() {
                 {sortedAndFilteredWebinars.length === 0 ? (
                     <div className="empty-state">
                         <FaVideo className="empty-state-icon" />
-                        <h3>
-                            {webinars.length === 0 
-                                ? 'No hay webinars disponibles'
-                                : 'No se encontraron webinars'
-                            }
-                        </h3>
-                        <p>
-                            {webinars.length === 0 
-                                ? 'Parece que aún no hay webinars creados. ¡Sé el primero en crear uno!'
-                                : 'No hay webinars que coincidan con tu búsqueda o filtros.'
-                            }
-                        </p>
-                        <Button 
-                            variant="primary" 
+                        <h3>No se encontraron webinars</h3>
+                        <p>No hay webinars que coincidan con tu búsqueda o filtros.</p>
+                        <Button
+                            variant="primary"
                             onClick={handleCreateWebinarClick}
                             className="btn-primary-modern"
                         >
                             <FaPlus style={{ marginRight: '8px' }} />
-                            {webinars.length === 0 ? 'Crear Primer Webinar' : 'Crear Nuevo Webinar'}
+                            Crear Primer Webinar
                         </Button>
-                        {webinars.length > 0 && (
-                            <Button 
-                                variant="outline-secondary" 
-                                onClick={() => {
-                                    setSearchTerm('');
-                                    setSelectedWebinarType('all');
-                                }}
-                                className="btn-secondary-modern"
-                                style={{ marginLeft: '10px' }}
-                            >
-                                Limpiar Filtros
-                            </Button>
-                        )}
                     </div>
                 ) : (
                     <div className={`webinars-container ${viewMode}`}>
@@ -531,27 +385,27 @@ function WebinarsPage() {
                                             {getStatusText(getWebinarStatus(webinar))}
                                         </Badge>
                                     </div>
-                                    <div className="webinar-actions-quick">
-                                        <Button
-                                            variant="link"
-                                            onClick={() => toggleFavorite(webinar.id)}
-                                            className={`favorite-btn ${favorites.includes(webinar.id) ? 'active' : ''}`}
-                                        >
-                                            <FaHeart />
-                                        </Button>
-                                        <Button
-                                            variant="link"
-                                            onClick={() => shareWebinar(webinar)}
-                                            className="share-btn"
-                                        >
-                                            <FaShare />
-                                        </Button>
-                                    </div>
+                                   <div className="webinar-actions-quick">
+    <Button
+        variant="link"
+        onClick={() => toggleFavorite(webinar.id)}
+        className={`favorite-btn ${favorites.includes(webinar.id) ? 'active' : ''}`}
+    >
+        <FaHeart />
+    </Button>
+    <Button
+        variant="link"
+        onClick={() => shareWebinar(webinar)}
+        className="share-btn"
+    >
+        <FaShare />
+    </Button>
+</div>
                                 </div>
                                 <Card.Body className="webinar-card-body">
                                     {webinar.imagen ? (
                                         <div className="webinar-image-container">
-                                            <img 
+                                            <img
                                                 src={webinar.imagen.startsWith('http') ? webinar.imagen : `${BASE_URL}${webinar.imagen}`}
                                                 alt={webinar.titulo}
                                                 className="webinar-image"
@@ -576,7 +430,7 @@ function WebinarsPage() {
                                     <Card.Text className="webinar-description">
                                         {webinar.descripcion || 'Descripción no disponible'}
                                     </Card.Text>
-                                    
+
                                     <div className="webinar-details">
                                         <div className="webinar-detail-item">
                                             <FaCalendarAlt className="detail-icon" />
@@ -616,20 +470,23 @@ function WebinarsPage() {
                                             <FaEye style={{ marginRight: '8px' }} />
                                             Detalles
                                         </Button>
-                                        <Button
-                                            variant="outline-warning"
-                                            onClick={() => handleEditClick(webinar.id)}
-                                            className="webinar-action-btn"
-                                        >
-                                            <FaEdit />
-                                        </Button>
-                                        <Button
-                                            variant="outline-danger"
-                                            onClick={() => handleDeleteClick(webinar)}
-                                            className="webinar-action-btn"
-                                        >
-                                            <FaTrash />
-                                        </Button>
+                                        {/* Botones de Editar y Eliminar eliminados */}
+                                        {/*
+                                         <Button
+                                             variant="outline-warning"
+                                             onClick={() => handleEditClick(webinar.id)}
+                                             className="webinar-action-btn"
+                                         >
+                                             <FaEdit />
+                                         </Button>
+                                         <Button
+                                             variant="outline-danger"
+                                             onClick={() => handleDeleteClick(webinar)}
+                                             className="webinar-action-btn"
+                                         >
+                                             <FaTrash />
+                                         </Button>
+                                         */}
                                     </div>
                                 </div>
                             </Card>
@@ -659,10 +516,10 @@ function WebinarsPage() {
                                         )}
                                     </div>
                                 </div>
-                                
+
                                 {selectedWebinar.imagen && (
                                     <div className="webinar-detail-image mb-3">
-                                        <img 
+                                        <img
                                             src={selectedWebinar.imagen.startsWith('http') ? selectedWebinar.imagen : `${BASE_URL}${selectedWebinar.imagen}`}
                                             alt={selectedWebinar.titulo}
                                             className="img-fluid rounded"
@@ -673,7 +530,7 @@ function WebinarsPage() {
                                         />
                                     </div>
                                 )}
-                                
+
                                 <div className="webinar-detail-content">
                                     <div className="webinar-detail-item">
                                         <FaCalendarAlt className="icon" />
@@ -681,7 +538,7 @@ function WebinarsPage() {
                                             <strong>Fecha y hora:</strong> {formatLocalDateTime(selectedWebinar.fecha)}
                                         </div>
                                     </div>
-                                    
+
                                     {selectedWebinar.expositor && (
                                         <div className="webinar-detail-item">
                                             <FaMicrophone className="icon" />
@@ -690,7 +547,7 @@ function WebinarsPage() {
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     {selectedWebinar.autor && (
                                         <div className="webinar-detail-item">
                                             <FaUser className="icon" />
@@ -699,19 +556,19 @@ function WebinarsPage() {
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     {selectedWebinar.enlace && (
                                         <div className="webinar-detail-item">
                                             <FaLink className="icon" />
                                             <div>
-                                                <strong>Enlace:</strong> 
+                                                <strong>Enlace:</strong>
                                                 <a href={selectedWebinar.enlace} target="_blank" rel="noopener noreferrer">
                                                     {selectedWebinar.enlace}
                                                 </a>
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     <div className="webinar-detail-item">
                                         <FaInfoCircle className="icon" />
                                         <div>
@@ -728,8 +585,8 @@ function WebinarsPage() {
                             Cerrar
                         </Button>
                         {selectedWebinar && selectedWebinar.enlace && (
-                            <Button 
-                                variant="success" 
+                            <Button
+                                variant="success"
                                 onClick={() => window.open(selectedWebinar.enlace, '_blank')}
                             >
                                 <FaExternalLinkAlt style={{ marginRight: '8px' }} />
@@ -739,46 +596,35 @@ function WebinarsPage() {
                     </Modal.Footer>
                 </Modal>
 
-                {/* Delete Confirmation Modal */}
-                <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>
-                            <FaTrash style={{ marginRight: '8px' }} />
-                            Confirmar Eliminación
-                        </Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        {webinarToDelete && (
-                            <div>
-                                <p>¿Estás seguro de que quieres eliminar el webinar:</p>
-                                <strong>"{webinarToDelete.titulo}"</strong>
-                                <p className="mt-2 text-warning">Esta acción no se puede deshacer.</p>
-                            </div>
-                        )}
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-                            Cancelar
-                        </Button>
-                        <Button variant="danger" onClick={confirmDelete}>
-                            <FaTrash style={{ marginRight: '8px' }} />
-                            Eliminar
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
-
-                {/* Toast Notifications */}
-                <ToastContainer position="top-end" className="p-3">
-                    <Toast 
-                        bg="success" 
-                        onClose={() => setShowToast(false)} 
-                        show={showToast} 
-                        delay={3000} 
-                        autohide
-                    >
-                        <Toast.Body>{toastMessage}</Toast.Body>
-                    </Toast>
-                </ToastContainer>
+                {/* Delete Confirmation Modal - Eliminado */}
+                {/*
+                 <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+                     <Modal.Header closeButton>
+                         <Modal.Title>
+                             <FaTrash style={{ marginRight: '8px' }} />
+                             Confirmar Eliminación
+                         </Modal.Title>
+                     </Modal.Header>
+                     <Modal.Body>
+                         {webinarToDelete && (
+                             <div>
+                                 <p>¿Estás seguro de que quieres eliminar el webinar:</p>
+                                 <strong>"{webinarToDelete.titulo}"</strong>
+                                 <p className="mt-2 text-warning">Esta acción no se puede deshacer.</p>
+                             </div>
+                         )}
+                     </Modal.Body>
+                     <Modal.Footer>
+                         <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                             Cancelar
+                         </Button>
+                         <Button variant="danger" onClick={confirmDelete}>
+                             <FaTrash style={{ marginRight: '8px' }} />
+                             Eliminar
+                         </Button>
+                     </Modal.Footer>
+                 </Modal>
+                 */}
             </Container>
         </div>
     );

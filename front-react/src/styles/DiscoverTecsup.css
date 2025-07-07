@@ -1,0 +1,176 @@
+/* src/styles/DiscoverTecsup.css */
+
+.discover-tecsup-section {
+    background: linear-gradient(135deg, #f0f4f8, #e0e7ee); /* Gradiente de fondo suave */
+    padding: 60px 0; /* Mayor padding vertical */
+    border-radius: 20px; /* Bordes redondeados */
+    margin-top: 80px; /* Mayor margen superior para separarlo de la sección anterior */
+    margin-bottom: 80px; /* Mayor margen inferior */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Sombra elegante */
+    text-align: center; /* Asegura que el contenido esté centrado */
+    position: relative;
+    overflow: hidden; /* Para contener los elementos decorativos */
+}
+
+/* Elementos decorativos (formas geométricas, etc.) */
+.discover-tecsup-section::before {
+    content: "";
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    width: 150px;
+    height: 150px;
+    background-color: rgba(102, 126, 234, 0.1); /* Color sutil del gradiente principal */
+    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; /* Forma orgánica */
+    animation: blob1 10s infinite alternate ease-in-out;
+    z-index: 0;
+}
+
+.discover-tecsup-section::after {
+    content: "";
+    position: absolute;
+    bottom: -70px;
+    right: -70px;
+    width: 180px;
+    height: 180px;
+    background-color: rgba(118, 75, 162, 0.1); /* Otro color sutil del gradiente */
+    border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; /* Otra forma orgánica */
+    animation: blob2 12s infinite alternate-reverse ease-in-out;
+    z-index: 0;
+}
+
+@keyframes blob1 {
+    0% { transform: translate(0, 0) scale(1); }
+    30% { transform: translate(20px, -30px) scale(1.05); }
+    70% { transform: translate(-10px, 40px) scale(0.98); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes blob2 {
+    0% { transform: translate(0, 0) scale(1); }
+    40% { transform: translate(-30px, 20px) scale(1.03); }
+    80% { transform: translate(10px, -40px) scale(0.95); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+
+.discover-tecsup-title {
+    font-size: 3rem; /* Título más grande */
+    font-weight: 700;
+    color: #2c3e50; /* Color oscuro para contraste */
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.05); /* Sombra de texto muy sutil */
+}
+
+.discover-tecsup-description {
+    font-size: 1.25rem; /* Descripción más grande */
+    color: #555;
+    margin-bottom: 40px; /* Más espacio debajo de la descripción */
+    max-width: 700px; /* Ancho máximo para la descripción */
+    margin-left: auto; /* Centra la descripción */
+    margin-right: auto; /* Centra la descripción */
+    line-height: 1.6;
+}
+
+.discover-tecsup-button {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 14px 35px; /* Mayor padding para botones más grandes */
+    border-radius: 50px; /* Muy redondeados */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradiente elegante */
+    border: none;
+    color: white; /* Texto blanco para los botones */
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); /* Sombra colorida */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Transición suave */
+    position: relative;
+    overflow: hidden;
+    z-index: 1; /* Asegura que el botón esté por encima de las formas decorativas */
+}
+
+.discover-tecsup-button:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); /* Gradiente invertido al hover */
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5); /* Sombra más intensa */
+    transform: translateY(-5px); /* Efecto de elevación */
+    color: white; /* Asegura que el texto permanezca blanco */
+}
+
+.discover-tecsup-button:active {
+    transform: translateY(-2px); /* Efecto de presión */
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Efecto de brillo en el botón al hover */
+.discover-tecsup-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+    z-index: 2;
+}
+
+.discover-tecsup-button:hover::before {
+    left: 100%;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .discover-tecsup-section {
+        padding: 40px 0;
+        margin-top: 60px;
+        margin-bottom: 60px;
+        border-radius: 15px;
+    }
+
+    .discover-tecsup-title {
+        font-size: 2.2rem;
+    }
+
+    .discover-tecsup-description {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+        max-width: 90%;
+    }
+
+    .discover-tecsup-button {
+        font-size: 1rem;
+        padding: 12px 25px;
+        display: block; /* Ocupa todo el ancho en móvil */
+        margin-left: auto;
+        margin-right: auto;
+        margin-bottom: 15px; /* Espacio entre botones en móvil */
+    }
+
+    .discover-tecsup-button.me-3 {
+        margin-right: auto !important; /* Elimina el margen derecho si es el primer botón */
+    }
+}
+
+@media (max-width: 576px) {
+    .discover-tecsup-section {
+        padding: 30px 0;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        border-radius: 10px;
+    }
+
+    .discover-tecsup-title {
+        font-size: 1.8rem;
+    }
+
+    .discover-tecsup-description {
+        font-size: 1rem;
+        margin-bottom: 25px;
+    }
+
+    .discover-tecsup-button {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+    }
+}

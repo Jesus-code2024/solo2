@@ -13,32 +13,29 @@ import {
 } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "../styles/HeroCarousel.css";
-import "../styles/EventCardList.css"; // Asegúrate de que esta ruta sea correcta
+import "../styles/EventCardList.css";
+import "../styles/DiscoverTecsup.css";
+import "../styles/WebinarCard.css"; // <-- ¡IMPORTA EL NUEVO ARCHIVO CSS!
 
 const API_URL_EVENTOS = "http://localhost:8080/api/eventos";
 const API_URL_WEBINARS = "http://localhost:8080/api/webinars";
 const API_URL_DESTACADOS = "http://localhost:8080/api/destacados";
 const BASE_URL = "http://localhost:8080";
 
-// MODIFICACIÓN CRÍTICA AQUÍ: formatLocalDateTime para incluir Fecha y Hora
 const formatLocalDateTime = (cadenaFechaHora) => {
   if (!cadenaFechaHora) return "N/A";
   const fecha = new Date(cadenaFechaHora);
 
-  // Si la fecha no es válida (ej. 'Invalid Date'), devuelve 'N/A'
   if (isNaN(fecha.getTime())) {
     return "N/A";
   }
 
-  // Opciones para la fecha (ej: "5 de julio de 2025")
   const opcionesFecha = { year: "numeric", month: "long", day: "numeric" };
   const fechaFormateada = fecha.toLocaleDateString("es-ES", opcionesFecha);
 
-  // Opciones para la hora (ej: "01:45 AM"). Añadimos hour12: true si quieres AM/PM
   const opcionesHora = { hour: "2-digit", minute: "2-digit", hour12: true };
   const horaFormateada = fecha.toLocaleTimeString("es-ES", opcionesHora);
 
-  // Combina la fecha y la hora
   return `${fechaFormateada}, ${horaFormateada}`;
 };
 
@@ -71,7 +68,6 @@ function HomePage() {
           headers: cabeceras,
         });
         setWebinars(webinarsRes.data);
-        // console.log("Webinars cargados:", webinarsRes.data); // Puedes descomentar para depurar
 
         const destacadosRes = await axios.get(API_URL_DESTACADOS, {
           headers: cabeceras,
@@ -92,17 +88,15 @@ function HomePage() {
     cargarDatos();
   }, [navegar]);
 
-  // renderizarItemListaEvento: FUNCIÓN PARA EL DISEÑO DE BANNER DE EVENTO
   const renderizarItemListaEvento = (item) => {
     const urlImagen = item.imagen
       ? item.imagen.startsWith("http://") || item.imagen.startsWith("https://")
         ? item.imagen
-        : `${BASE_URL}/uploads/${item.imagen}` // <-- Asegúrate de que esta línea esté correcta
+        : `${BASE_URL}/uploads/${item.imagen}`
       : "https://placehold.co/1200x300/png?text=Banner+Evento";
 
     const titulo = item.titulo || "Sin título";
     const ubicacion = item.ubicacion || "Ubicación N/A";
-    // CAMBIO CRÍTICO AQUÍ: Usar directamente el resultado de formatLocalDateTime
     const fechaHoraCompleta = formatLocalDateTime(
       item.fechaInicio || item.fecha
     );
@@ -128,7 +122,6 @@ function HomePage() {
             <Button
               variant="primary"
               className="event-banner-button"
-              // CAMBIO AQUÍ: Navega a /eventos/:id
               onClick={() => navegar(`/eventos/${item.id}`)}
             >
               Ver Detalles
@@ -140,64 +133,62 @@ function HomePage() {
     );
   };
 
-  // renderizarTarjeta (FUNCIÓN PARA LOS WEBINARS, etc.)
+  // renderizarTarjeta - MODIFICADA
   const renderizarTarjeta = (item, tipo) => {
     const urlImagen = item.imagen
       ? item.imagen.startsWith("http://") || item.imagen.startsWith("https://")
         ? item.imagen
-        : `${BASE_URL}/uploads/${item.imagen}` // <-- Asegúrate de que esta línea esté correcta
-      : "https://placehold.co/400x200/png?text=No+Imagen"; // Imagen por defecto si no hay
+        : `${BASE_URL}/uploads/${item.imagen}`
+      : "https://placehold.co/400x200/png?text=No+Imagen";
 
     const titulo = item.titulo || "Sin título";
     const descripcion = item.descripcion || "Sin descripción";
-    // Usamos la nueva formatLocalDateTime para la fecha completa
     const infoFecha = item.fechaInicio
       ? formatLocalDateTime(item.fechaInicio)
       : item.fecha
       ? formatLocalDateTime(item.fecha)
       : "Fecha N/A";
-    const enlace = item.enlace;
 
     return (
       <Col md={4} className="mb-4 d-flex align-items-stretch">
-        <Card className="h-100 shadow-sm" style={{ width: "100%" }}>
-          {/* ... (Card.Img, Card.Body, Card.Title, Card.Text) ... */}
-          <Card.Text className="text-muted">
-            {`Fecha: ${infoFecha}`} {/* Mostrar la fecha completa aquí */}
-            {tipo === "evento" &&
-              item.ubicacion &&
-              ` | Ubicación: ${item.ubicacion}`}
-            {tipo === "webinar" &&
-              item.expositor &&
-              ` | Expositor: ${item.expositor}`}
-          </Card.Text>
-          {/* ... (Card.Text descripción) ... */}
-          <div className="mt-auto">
-            {/* Botón para ver webinar si existe el enlace */}
-            {item.enlace &&
-              tipo === "webinar" && ( // Se agregó item.enlace para asegurar que el botón solo aparezca si hay enlace
-                <Button
-                  variant="outline-primary"
-                  href={item.enlace}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="me-2"
-                >
-                  Ir al Webinar
-                </Button>
-              )}
-            <Button
-              variant="primary"
-              // CAMBIO AQUÍ: Navega dinámicamente según el tipo de item
-              onClick={() =>
-                navegar(
-                  `/${item.fechaInicio ? "eventos" : "webinars"}/${item.id}`
-                )
-              }
-            >
-              Ver Detalles
-            </Button>
-          </div>
+        <Card className="webinar-card h-100 shadow-sm"> {/* Aplicamos la nueva clase webinar-card */}
+          {/* Lógica condicional: SOLO muestra Card.Img si el tipo NO es 'webinar'
+              Para los webinars, podríamos no mostrar imagen o usar un ícono/placeholder fijo */}
+          {/* Si quieres una imagen genérica para webinars, puedes descomentar y ajustar: */}
+          {/* <Card.Img
+            variant="top"
+            src={tipo === "webinar" ? "https://placehold.co/600x300/png?text=Webinar" : urlImagen}
+            alt={titulo}
+            className="webinar-card-img"
+          /> */}
+          <Card.Body className="webinar-card-body d-flex flex-column"> {/* Flex column para auto-ajuste */}
+            <Card.Title className="webinar-card-title">{titulo}</Card.Title>
+            <Card.Text className="webinar-card-meta text-muted">
+              <span className="webinar-card-icon">🗓️</span> {`Fecha: ${infoFecha}`}
+              {tipo === "webinar" &&
+                item.expositor && (
+                  <>
+                    <span className="webinar-card-icon ms-3">🗣️</span> {`Expositor: ${item.expositor}`}
+                  </>
+                )}
+            </Card.Text>
+            <Card.Text className="webinar-card-description flex-grow-1"> {/* Permite que la descripción crezca */}
+              {descripcion}
+            </Card.Text>
+            <div className="mt-auto pt-3"> {/* mt-auto para empujar el botón hacia abajo */}
+              <Button
+                variant="primary"
+                className="webinar-card-button"
+                onClick={() =>
+                  navegar(
+                    `/${item.fechaInicio ? "eventos" : "webinars"}/${item.id}`
+                  )
+                }
+              >
+                Ver Detalles
+              </Button>
+            </div>
+          </Card.Body>
         </Card>
       </Col>
     );
@@ -220,7 +211,7 @@ function HomePage() {
 
   return (
     <Container fluid className="home-page-container p-0">
-      {/* Destacados */}
+      {/* Destacados (mantienen imagen) */}
       <Carousel fade className="hero-carousel">
         {elementosDestacados.map((item, index) => (
           <Carousel.Item key={index}>
@@ -231,29 +222,32 @@ function HomePage() {
                   item.imagen?.startsWith("http")
                     ? item.imagen
                     : BASE_URL + "/uploads/" + item.imagen
-                })`, // <--- Asegúrate de que aquí sea '/uploads/'
+                })`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 height: "600px",
               }}
             >
-              <Carousel.Caption className="hero-carousel-caption">
-                <h3 className="hero-carousel-title">{item.titulo}</h3>
-                <p className="hero-carousel-description">{item.descripcion}</p>
-                <Button
-                  variant="light"
-                  className="hero-carousel-button"
-                  onClick={() => navegar(`/${item.tipo}s/${item.id}`)}
-                >
-                  Ver Detalles
-                </Button>
+              <Carousel.Caption className="hero-carousel-caption align-items-center justify-content-start text-start w-100 h-100">
+                <div className="carousel-content-wrapper">
+                  <h3 className="hero-carousel-title">{item.titulo}</h3>
+                  <p className="hero-carousel-description">{item.descripcion}</p>
+                  <Button
+                    variant="light"
+                    className="hero-carousel-button"
+                    onClick={() => navegar(`/${item.tipo}s/${item.id}`)}
+                  >
+                    Ver Detalles
+                  </Button>
+                </div>
               </Carousel.Caption>
             </div>
           </Carousel.Item>
         ))}
       </Carousel>
 
-      {/* Lista de eventos (Próximos Eventos) */}
+      {/* Resto del código de HomePage.jsx permanece igual */}
+      {/* Lista de eventos (Próximos Eventos) - mantiene imagen */}
       <Container className="mt-5">
         <h2 className="text-center mb-4">Próximos Eventos</h2>
         <div className="event-list-container">
@@ -269,16 +263,15 @@ function HomePage() {
         </div>
       </Container>
 
-      {/* SECCIÓN DE ÚLTIMOS WEBINARS (CARRUSEL DE 3 COLUMNAS - REINTRODUCIDA) */}
+      {/* SECCIÓN DE ÚLTIMOS WEBINARS (CARRUSEL DE 3 COLUMNAS - IMAGEN ELIMINADA) */}
       <Container className="mt-5">
-        <h2 className="text-center mb-4">Últimos Webinars</h2>
+        <h2 className="text-center mb-4 webinar-section-title">Últimos Webinars</h2> {/* Nueva clase para el título */}
         {webinars.length > 0 ? (
           <Carousel
             indicators={false}
             interval={null}
-            className="custom-carousel"
+            className="custom-carousel webinar-carousel" // Nueva clase para el carrusel de webinars
           >
-            {/* Divide los webinars en grupos de 3 para el carrusel */}
             {Array.from({ length: Math.ceil(webinars.length / 3) }).map(
               (_, index) => (
                 <Carousel.Item key={index}>
@@ -286,7 +279,6 @@ function HomePage() {
                     {webinars.slice(index * 3, index * 3 + 3).map((webinar) => (
                       <React.Fragment key={webinar.id}>
                         {renderizarTarjeta(webinar, "webinar")}{" "}
-                        {/* Utiliza renderizarTarjeta para los webinars */}
                       </React.Fragment>
                     ))}
                   </Row>
@@ -306,27 +298,32 @@ function HomePage() {
       </Container>
 
       {/* Sección de Descubre más sobre Tecsup */}
-      <Container className="my-5">
-        <Row>
-          <Col className="text-center">
-            <h3>Descubre más sobre Tecsup</h3>
-            <p>Explora nuestras publicaciones, carreras y departamentos.</p>
-            <Button
-              variant="outline-secondary"
-              onClick={() => navegar("/publications")}
-            >
-              Ver Publicaciones
-            </Button>
-            <Button
-              variant="outline-secondary"
-              className="ms-3"
-              onClick={() => navegar("/carreras")}
-            >
-              Ver Carreras
-            </Button>
-          </Col>
-        </Row>
-      </Container>
+      <div className="discover-tecsup-section my-5">
+        <Container>
+          <Row>
+            <Col className="text-center">
+              <h3 className="discover-tecsup-title">Descubre más sobre Tecsup</h3>
+              <p className="discover-tecsup-description">
+                Explora nuestras publicaciones, carreras y departamentos.
+              </p>
+              <Button
+                variant="primary"
+                className="discover-tecsup-button me-3"
+                onClick={() => navegar("/publications")}
+              >
+                Ver Publicaciones
+              </Button>
+              <Button
+                variant="primary"
+                className="discover-tecsup-button"
+                onClick={() => navegar("/carreras")}
+              >
+                Ver Carreras
+              </Button>
+            </Col>
+          </Row>
+        </Container>
+      </div>
     </Container>
   );
 }
