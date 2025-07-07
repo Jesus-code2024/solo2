@@ -7,13 +7,24 @@ import {
     Row,
     Col,
     Button,
-    Table,
     Form,
-    InputGroup,
-    FormControl,
-    Nav, // Para las pestañas
+    Nav,
+    Alert,
+    Modal
 } from 'react-bootstrap';
-import { FaEdit, FaTrash, FaSearch, FaPlus } from 'react-icons/fa'; // Íconos para acciones
+import { 
+    FaEdit, 
+    FaTrash, 
+    FaSearch, 
+    FaPlus, 
+    FaEye, 
+    FaCalendarAlt,
+    FaUser,
+    FaFileAlt,
+    FaTags,
+    FaFilter
+} from 'react-icons/fa';
+import '../styles/PublicationsPage.css';
 
 // URL base de tu backend de Spring Boot para los anuncios/publicaciones
 const API_URL_PUBLICACIONES = 'http://localhost:8080/api/anuncios';
@@ -23,7 +34,15 @@ function PublicationsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('all'); 
+    const [activeTab, setActiveTab] = useState('all');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [publicationToDelete, setPublicationToDelete] = useState(null);
+    const [stats, setStats] = useState({
+        total: 0,
+        general: 0,
+        carrera: 0,
+        departamento: 0
+    });
     const navigate = useNavigate();
 
     const getAuthHeaders = () => {
@@ -34,14 +53,54 @@ function PublicationsPage() {
     const mapTipoAnuncioToDisplay = (tipoEnum) => {
         switch (tipoEnum) {
             case 'GEN':
-                return 'General';
+                return { label: 'General', class: 'general' };
             case 'CAR':
-                return 'Carrera';
+                return { label: 'Carrera', class: 'carrera' };
             case 'DEP':
-                return 'Departamento';
+                return { label: 'Departamento', class: 'departamento' };
             default:
-                return tipoEnum; 
+                return { label: tipoEnum, class: 'general' };
         }
+    };
+
+    const calculateStats = (pubs) => {
+        const stats = {
+            total: pubs.length,
+            general: pubs.filter(p => p.tipo === 'GEN').length,
+            carrera: pubs.filter(p => p.tipo === 'CAR').length,
+            departamento: pubs.filter(p => p.tipo === 'DEP').length
+        };
+        setStats(stats);
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    const getAuthorInitials = (author) => {
+        if (!author) return 'U';
+        if (author.firstName && author.lastName) {
+            return `${author.firstName[0]}${author.lastName[0]}`.toUpperCase();
+        }
+        if (author.username) {
+            return author.username.substring(0, 2).toUpperCase();
+        }
+        if (author.email) {
+            return author.email.substring(0, 2).toUpperCase();
+        }
+        return 'U';
+    };
+
+    const getAuthorName = (author) => {
+        if (!author) return 'Usuario Desconocido';
+        if (author.firstName && author.lastName) {
+            return `${author.firstName} ${author.lastName}`;
+        }
+        return author.username || author.email || 'Usuario Desconocido';
     };
 
     // Función para obtener las publicaciones del backend
@@ -59,6 +118,7 @@ function PublicationsPage() {
             // Incluir el token en los headers de la petición
             const response = await axios.get(url, { headers: getAuthHeaders() });
             setPublications(response.data);
+            calculateStats(response.data);
         } catch (err) {
             console.error('Error al cargar las publicaciones:', err);
             setError('No se pudieron cargar las publicaciones. Por favor, intente de nuevo.');
@@ -104,136 +164,264 @@ function PublicationsPage() {
         navigate(`/publications/edit/${id}`); 
     };
 
-    const handleDeletePublication = async (id) => {
-        if (window.confirm('¿Estás seguro de que quieres eliminar esta publicación?')) {
-            try {
-                await axios.delete(`${API_URL_PUBLICACIONES}/${id}`, { headers: getAuthHeaders() }); 
-                console.log('Publicación eliminada con ID:', id);
-                fetchPublications(activeTab); 
-            } catch (err) {
-                console.error('Error al eliminar publicación:', err);
-                setError('No se pudo eliminar la publicación.');
-                if (err.response && err.response.status === 401) {
-                    localStorage.removeItem('token');
-                    navigate('/login');
-                } else if (err.response && err.response.status === 403) {
-                    setError('No tienes permiso para eliminar esta publicación.');
-                } else if (err.response && err.response.status === 400 && err.response.data.includes("No tienes permiso para eliminar este anuncio")) {
-                    setError(err.response.data);
-                }
+    const handleDeletePublication = (publication) => {
+        setPublicationToDelete(publication);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!publicationToDelete) return;
+        
+        try {
+            await axios.delete(`${API_URL_PUBLICACIONES}/${publicationToDelete.id}`, { 
+                headers: getAuthHeaders() 
+            });
+            console.log('Publicación eliminada con ID:', publicationToDelete.id);
+            fetchPublications(activeTab);
+            setShowDeleteModal(false);
+            setPublicationToDelete(null);
+        } catch (err) {
+            console.error('Error al eliminar publicación:', err);
+            setError('No se pudo eliminar la publicación.');
+            if (err.response && err.response.status === 401) {
+                localStorage.removeItem('jwtToken');
+                navigate('/login');
+            } else if (err.response && err.response.status === 403) {
+                setError('No tienes permiso para eliminar esta publicación.');
+            } else if (err.response && err.response.status === 400 && err.response.data.includes("No tienes permiso para eliminar este anuncio")) {
+                setError(err.response.data);
             }
         }
     };
 
-    if (loading) return <p>Cargando publicaciones...</p>;
-    if (error) return <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>;
+    if (loading) {
+        return (
+            <div className="publications-page">
+                <Container>
+                    <div className="loading-spinner">
+                        <div className="spinner-custom"></div>
+                        <div className="loading-text">Cargando publicaciones...</div>
+                    </div>
+                </Container>
+            </div>
+        );
+    }
 
     return (
-        <Container fluid className="publications-page-container mt-4">
-            <Row className="mb-4 align-items-center">
-                <Col md={6}>
-                    <h1>Listado de Publicaciones</h1>
-                </Col>
-                <Col md={6} className="text-md-end">
-                    <Button variant="primary" onClick={handleCreatePublication}>
-                        <FaPlus className="me-2" /> Crear Publicación
-                    </Button>
-                </Col>
-            </Row>
+        <div className="publications-page">
+            <Container fluid>
+                {error && (
+                    <Alert variant="danger" className="error-alert">
+                        <strong>Error:</strong> {error}
+                    </Alert>
+                )}
 
-            <Row className="mb-4">
-                <Col md={8}>
-                    <Nav variant="tabs" defaultActiveKey="all" onSelect={handleTabSelect}>
-                        <Nav.Item>
-                            <Nav.Link eventKey="all">Todos</Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item>
-                            <Nav.Link eventKey="GEN">Anuncios Generales</Nav.Link> 
-                        </Nav.Item>
-                        <Nav.Item>
-                            <Nav.Link eventKey="CAR">Anuncios de Carrera</Nav.Link> 
-                        </Nav.Item>
-                        <Nav.Item>
-                            <Nav.Link eventKey="DEP">Anuncios de Departamento</Nav.Link> 
-                        </Nav.Item>
+                {/* Hero Section */}
+                <div className="publications-hero">
+                    <Container>
+                        <Row className="align-items-center">
+                            <Col md={8}>
+                                <h1><FaFileAlt className="me-3" />Publicaciones</h1>
+                                <p>Gestiona y visualiza todas las publicaciones de la plataforma</p>
+                            </Col>
+                            <Col md={4} className="text-md-end">
+                                <Button 
+                                    className="create-publication-btn"
+                                    onClick={handleCreatePublication}
+                                    size="lg"
+                                >
+                                    <FaPlus className="me-2" />
+                                    Crear Publicación
+                                </Button>
+                            </Col>
+                        </Row>
+                    </Container>
+                </div>
 
-                    </Nav>
-                </Col>
-                <Col md={4}>
-                    {/* Barra de Búsqueda */}
-                    <InputGroup>
-                        <FormControl
-                            placeholder="Buscar por título, descripción, autor..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <Button variant="outline-secondary">
-                            <FaSearch />
-                        </Button>
-                    </InputGroup>
-                </Col>
-            </Row>
-
-            <Row>
-                <Col>
-                    <div className="table-responsive">
-                        <Table striped bordered hover className="publications-table">
-                            <thead>
-                                <tr>
-                                    <th>Tipo</th>
-                                    <th>Título</th>
-                                    <th>Descripción</th>
-                                    <th>Detalles</th>
-                                    <th>Fecha</th>
-                                    <th>Autor</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredPublications.length > 0 ? (
-                                    filteredPublications.map((pub) => (
-                                        <tr key={pub.id}> {/* Asegúrate que pub.id sea el ID único de tu publicación */}
-                                            <td>{mapTipoAnuncioToDisplay(pub.tipo)}</td> {/* Mapear el enum a texto legible */}
-                                            <td>{pub.titulo}</td>
-                                            <td>{pub.contenido}</td> {/* Propiedad 'contenido' de tu backend */}
-                                            <td>
-                                                <Button variant="info" size="sm" onClick={() => navigate(`/publications/${pub.id}`)}>
-                                                    Ver
-                                                </Button>
-                                            </td>
-                                            <td>
-                                                {pub.fechaPublicacion ? new Date(pub.fechaPublicacion).toLocaleDateString() : 'N/A'}
-                                            </td> {/* 'fechaPublicacion' de tu backend */}
-                                            <td>
-                                                {pub.autor ? 
-                                                    (pub.autor.firstName && pub.autor.lastName ? 
-                                                        `${pub.autor.firstName} ${pub.autor.lastName}` : // Si ambos existen, mostrar nombre completo
-                                                        (pub.autor.firstName || pub.autor.username || pub.autor.email || 'Desconocido') // Si no, intentar uno de estos
-                                                    ) : 
-                                                    'N/A'
-                                                }
-                                            </td> {/* Accede a firstName, lastName, username o email */}
-                                            <td>
-                                                <Button variant="warning" size="sm" className="me-2" onClick={() => handleEditPublication(pub.id)}>
-                                                    <FaEdit />
-                                                </Button>
-                                                <Button variant="danger" size="sm" onClick={() => handleDeletePublication(pub.id)}>
-                                                    <FaTrash />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="7" className="text-center">No se encontraron publicaciones.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </Table>
+                {/* Statistics */}
+                <div className="stats-container">
+                    <div className="stat-card">
+                        <div className="stat-number">{stats.total}</div>
+                        <div className="stat-label">Total</div>
                     </div>
-                </Col>
-            </Row>
-        </Container>
+                    <div className="stat-card">
+                        <div className="stat-number">{stats.general}</div>
+                        <div className="stat-label">Generales</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-number">{stats.carrera}</div>
+                        <div className="stat-label">Carreras</div>
+                    </div>
+                    <div className="stat-card">
+                        <div className="stat-number">{stats.departamento}</div>
+                        <div className="stat-label">Departamentos</div>
+                    </div>
+                </div>
+
+                {/* Filters */}
+                <div className="publications-filters">
+                    <Row>
+                        <Col md={8}>
+                            <Nav variant="tabs" className="filter-tabs" activeKey={activeTab} onSelect={handleTabSelect}>
+                                <Nav.Item>
+                                    <Nav.Link eventKey="all">
+                                        <FaTags className="me-2" />
+                                        Todos
+                                    </Nav.Link>
+                                </Nav.Item>
+                                <Nav.Item>
+                                    <Nav.Link eventKey="GEN">
+                                        <FaFileAlt className="me-2" />
+                                        Generales
+                                    </Nav.Link>
+                                </Nav.Item>
+                                <Nav.Item>
+                                    <Nav.Link eventKey="CAR">
+                                        <FaUser className="me-2" />
+                                        Carreras
+                                    </Nav.Link>
+                                </Nav.Item>
+                                <Nav.Item>
+                                    <Nav.Link eventKey="DEP">
+                                        <FaFilter className="me-2" />
+                                        Departamentos
+                                    </Nav.Link>
+                                </Nav.Item>
+                            </Nav>
+                        </Col>
+                        <Col md={4}>
+                            <div className="search-container">
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Buscar publicaciones..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="search-input"
+                                />
+                                <FaSearch className="search-icon" />
+                            </div>
+                        </Col>
+                    </Row>
+                </div>
+
+                {/* Publications Grid */}
+                {filteredPublications.length > 0 ? (
+                    <div className="publications-grid">
+                        {filteredPublications.map((pub) => {
+                            const typeInfo = mapTipoAnuncioToDisplay(pub.tipo);
+                            return (
+                                <div key={pub.id} className="publication-card">
+                                    <div className="publication-card-header">
+                                        <div className={`publication-type-badge ${typeInfo.class}`}>
+                                            {typeInfo.label}
+                                        </div>
+                                        <h3 className="publication-title">{pub.titulo}</h3>
+                                        <div className="publication-date">
+                                            <FaCalendarAlt className="me-2" />
+                                            {pub.fechaPublicacion ? formatDate(pub.fechaPublicacion) : 'Fecha no disponible'}
+                                        </div>
+                                    </div>
+                                    <div className="publication-card-body">
+                                        <div className="publication-content">
+                                            {pub.contenido || 'Sin contenido disponible'}
+                                        </div>
+                                        <div className="publication-author">
+                                            <div className="author-avatar">
+                                                {getAuthorInitials(pub.autor)}
+                                            </div>
+                                            <div className="author-info">
+                                                <div className="author-name">
+                                                    {getAuthorName(pub.autor)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="publication-actions">
+                                            <Button 
+                                                className="action-btn view"
+                                                onClick={() => navigate(`/publications/${pub.id}`)}
+                                            >
+                                                <FaEye className="me-1" />
+                                                Ver
+                                            </Button>
+                                            <Button 
+                                                className="action-btn edit"
+                                                onClick={() => handleEditPublication(pub.id)}
+                                            >
+                                                <FaEdit className="me-1" />
+                                                Editar
+                                            </Button>
+                                            <Button 
+                                                className="action-btn delete"
+                                                onClick={() => handleDeletePublication(pub)}
+                                            >
+                                                <FaTrash className="me-1" />
+                                                Eliminar
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="empty-state">
+                        <FaFileAlt className="empty-state-icon" />
+                        <h3>No se encontraron publicaciones</h3>
+                        <p>No hay publicaciones que coincidan con tu búsqueda o filtros.</p>
+                        <Button 
+                            className="create-publication-btn"
+                            onClick={handleCreatePublication}
+                        >
+                            <FaPlus className="me-2" />
+                            Crear Primera Publicación
+                        </Button>
+                    </div>
+                )}
+
+                {/* Delete Confirmation Modal */}
+                <Modal 
+                    show={showDeleteModal} 
+                    onHide={() => setShowDeleteModal(false)}
+                    centered
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>Confirmar Eliminación</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>¿Estás seguro de que quieres eliminar la publicación?</p>
+                        {publicationToDelete && (
+                            <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                                <strong>{publicationToDelete.titulo}</strong>
+                                <p className="text-muted mb-0">
+                                    {publicationToDelete.contenido ? 
+                                        publicationToDelete.contenido.substring(0, 100) + '...' : 
+                                        'Sin contenido'
+                                    }
+                                </p>
+                            </div>
+                        )}
+                        <p className="text-danger mt-2">
+                            <strong>Esta acción no se puede deshacer.</strong>
+                        </p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => setShowDeleteModal(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button 
+                            variant="danger" 
+                            onClick={confirmDelete}
+                        >
+                            <FaTrash className="me-2" />
+                            Eliminar
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+            </Container>
+        </div>
     );
 }
 
