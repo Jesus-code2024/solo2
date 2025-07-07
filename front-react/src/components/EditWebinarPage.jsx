@@ -1,12 +1,12 @@
-// src/components/EditWebinarPage.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Form, Button, Alert, Row, Col, Card } from 'react-bootstrap';
-import { FaVideo, FaCalendarAlt, FaUser, FaLink, FaImage, FaSave, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaVideo, FaCalendarAlt, FaUser, FaLink, FaImage, FaSave, FaTimes, FaSpinner, FaUpload, FaTrash } from 'react-icons/fa';
 import '../styles/CreateWebinarPage.css';
 
 const API_URL_WEBINARS = 'http://localhost:8080/api/webinars';
+const BASE_URL = 'http://localhost:8080';
 
 function EditWebinarPage() {
     const { id } = useParams();
@@ -16,6 +16,9 @@ function EditWebinarPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const getAuthHeaders = () => {
         const token = localStorage.getItem('jwtToken');
@@ -27,6 +30,13 @@ function EditWebinarPage() {
             try {
                 const response = await axios.get(`${API_URL_WEBINARS}/${id}`, { headers: getAuthHeaders() });
                 setWebinar(response.data);
+                // Establecer la imagen actual como preview
+                if (response.data.imagen) {
+                    const imageUrl = response.data.imagen.startsWith('http') 
+                        ? response.data.imagen 
+                        : `${BASE_URL}${response.data.imagen}`;
+                    setImagePreview(imageUrl);
+                }
                 setLoading(false);
             } catch (err) {
                 console.error('Error al cargar el webinar para edición:', err);
@@ -49,6 +59,64 @@ function EditWebinarPage() {
         }));
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validar tipo de archivo
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                setError('Por favor selecciona un archivo de imagen válido (JPEG, PNG, GIF, WebP)');
+                return;
+            }
+
+            // Validar tamaño de archivo (máximo 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('La imagen debe ser menor a 5MB');
+                return;
+            }
+
+            setSelectedFile(file);
+            
+            // Crear preview de la imagen
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImagePreview(e.target.result);
+            };
+            reader.readAsDataURL(file);
+            
+            setError(null);
+        }
+    };
+
+    const uploadImage = async () => {
+        if (!selectedFile) return null;
+
+        setUploadingImage(true);
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        try {
+            const response = await axios.post(`${BASE_URL}/api/upload`, formData, {
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            setUploadingImage(false);
+            return response.data.url || response.data.filePath;
+        } catch (err) {
+            console.error('Error al subir la imagen:', err);
+            setUploadingImage(false);
+            throw new Error('Error al subir la imagen');
+        }
+    };
+
+    const removeImage = () => {
+        setSelectedFile(null);
+        setImagePreview(null);
+        setWebinar(prev => ({ ...prev, imagen: '' }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
@@ -56,8 +124,30 @@ function EditWebinarPage() {
         setSaving(true);
         
         try {
-            await axios.put(`${API_URL_WEBINARS}/${id}`, webinar, { headers: getAuthHeaders() });
+            let imageUrl = webinar.imagen;
+            
+            // Si hay una nueva imagen seleccionada, subirla primero
+            if (selectedFile) {
+                try {
+                    imageUrl = await uploadImage();
+                } catch (uploadError) {
+                    setError('Error al subir la imagen. Intente de nuevo.');
+                    setSaving(false);
+                    return;
+                }
+            }
+
+            const updatedWebinar = {
+                ...webinar,
+                imagen: imageUrl
+            };
+
+            await axios.put(`${API_URL_WEBINARS}/${id}`, updatedWebinar, { headers: getAuthHeaders() });
             setSuccess(true);
+            
+            // Marcar que se actualizó un webinar para refrescar la página de webinars
+            sessionStorage.setItem('webinarUpdated', 'true');
+            
             setTimeout(() => {
                 navigate('/webinars');
             }, 1500);
@@ -221,7 +311,7 @@ function EditWebinarPage() {
                                     </Row>
 
                                     <Row>
-                                        <Col md={6}>
+                                        <Col md={12}>
                                             <Form.Group className="mb-3">
                                                 <Form.Label className="fw-bold">
                                                     <FaLink className="me-2" />
@@ -236,19 +326,74 @@ function EditWebinarPage() {
                                                 />
                                             </Form.Group>
                                         </Col>
-                                        <Col md={6}>
+                                    </Row>
+
+                                    {/* Sección de subida de imagen */}
+                                    <Row>
+                                        <Col md={12}>
                                             <Form.Group className="mb-3">
                                                 <Form.Label className="fw-bold">
                                                     <FaImage className="me-2" />
-                                                    URL de Imagen
+                                                    Imagen del Webinar
                                                 </Form.Label>
-                                                <Form.Control
-                                                    type="url"
-                                                    name="imagen"
-                                                    value={webinar.imagen || ''}
-                                                    onChange={handleChange}
-                                                    placeholder="https://ejemplo.com/imagen.jpg"
-                                                />
+                                                <div className="upload-area border rounded p-3" style={{ backgroundColor: '#f8f9fa' }}>
+                                                    {!imagePreview ? (
+                                                        <div className="text-center py-3">
+                                                            <FaUpload size={48} className="text-muted mb-3" />
+                                                            <p className="text-muted mb-2">Arrastra una imagen aquí o haz clic para seleccionar</p>
+                                                            <Form.Control
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={handleFileChange}
+                                                                className="d-none"
+                                                                id="imageUpload"
+                                                            />
+                                                            <Button 
+                                                                variant="outline-primary" 
+                                                                onClick={() => document.getElementById('imageUpload').click()}
+                                                            >
+                                                                Seleccionar Imagen
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center">
+                                                            <img 
+                                                                src={imagePreview} 
+                                                                alt="Vista previa"
+                                                                className="img-fluid rounded mb-3"
+                                                                style={{ maxHeight: '300px', objectFit: 'cover' }}
+                                                            />
+                                                            <div className="d-flex justify-content-center gap-2">
+                                                                <Form.Control
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={handleFileChange}
+                                                                    className="d-none"
+                                                                    id="imageChangeUpload"
+                                                                />
+                                                                <Button 
+                                                                    variant="outline-primary" 
+                                                                    size="sm"
+                                                                    onClick={() => document.getElementById('imageChangeUpload').click()}
+                                                                >
+                                                                    <FaImage className="me-1" />
+                                                                    Cambiar Imagen
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="outline-danger" 
+                                                                    size="sm"
+                                                                    onClick={removeImage}
+                                                                >
+                                                                    <FaTrash className="me-1" />
+                                                                    Eliminar
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    <small className="text-muted d-block mt-2">
+                                                        Formatos soportados: JPEG, PNG, GIF, WebP. Tamaño máximo: 5MB
+                                                    </small>
+                                                </div>
                                             </Form.Group>
                                         </Col>
                                     </Row>
@@ -268,31 +413,11 @@ function EditWebinarPage() {
                                         </Col>
                                     </Row>
 
-                                    {/* Vista previa de imagen */}
-                                    {webinar.imagen && (
-                                        <Row>
-                                            <Col md={12}>
-                                                <div className="mb-4">
-                                                    <h6 className="fw-bold">Vista previa de imagen:</h6>
-                                                    <img 
-                                                        src={webinar.imagen} 
-                                                        alt="Vista previa"
-                                                        className="img-fluid rounded"
-                                                        style={{ maxHeight: '200px', objectFit: 'cover' }}
-                                                        onError={(e) => {
-                                                            e.target.style.display = 'none';
-                                                        }}
-                                                    />
-                                                </div>
-                                            </Col>
-                                        </Row>
-                                    )}
-
                                     <div className="d-flex justify-content-between">
                                         <Button 
                                             variant="outline-secondary" 
                                             onClick={() => navigate('/webinars')}
-                                            disabled={saving}
+                                            disabled={saving || uploadingImage}
                                         >
                                             <FaTimes className="me-2" />
                                             Cancelar
@@ -300,12 +425,12 @@ function EditWebinarPage() {
                                         <Button 
                                             variant="primary" 
                                             type="submit"
-                                            disabled={saving}
+                                            disabled={saving || uploadingImage}
                                         >
                                             {saving ? (
                                                 <>
                                                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                    Guardando...
+                                                    {uploadingImage ? 'Subiendo imagen...' : 'Guardando...'}
                                                 </>
                                             ) : (
                                                 <>

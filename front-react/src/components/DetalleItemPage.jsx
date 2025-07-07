@@ -3,6 +3,8 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Spinner, Alert, Card, Button, Row, Col } from 'react-bootstrap';
 import '../../src/styles/DetalleItemPage.css'; // <-- Importar nuevo archivo CSS para estilos personalizados
+import { asistirAEvento, contarAsistentes, yaAsistio } from '../services/asistencia';
+import { jwtDecode } from 'jwt-decode';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 const BASE_URL = 'http://localhost:8080';
@@ -28,6 +30,9 @@ function DetalleItemPage() {
     const [item, setItem] = useState(null);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
+    const [asistentes, setAsistentes] = useState(0);
+    const [asistire, setAsistire] = useState(false);
+    const [asistirError, setAsistirError] = useState(null);
 
     const currentPathSegments = location.pathname.split('/');
     const tipo = currentPathSegments[1];
@@ -84,6 +89,49 @@ function DetalleItemPage() {
             setCargando(false);
         }
     }, [id, tipo, navegar, location.pathname]);
+
+    const token = localStorage.getItem('jwtToken');
+    let userId = null;
+    if (token) {
+        try {
+            const decoded = jwtDecode(token);
+            userId = decoded.userId || decoded.id || decoded.sub || null;
+        } catch {}
+    }
+
+    useEffect(() => {
+        if (item && (tipo === 'eventos' || tipo === 'webinars')) {
+            contarAsistentes(item.id, tipo === 'eventos' ? 'EVENTO' : 'WEBINAR')
+                .then(data => {
+                    const n = Number(data);
+                    setAsistentes(Number.isFinite(n) ? n : 0);
+                })
+                .catch(() => setAsistentes(0));
+            if (userId) {
+                yaAsistio(item.id, userId, tipo === 'eventos' ? 'EVENTO' : 'WEBINAR')
+                    .then(val => setAsistire(val === true || val === 'true' || val === 1))
+                    .catch(() => setAsistire(false));
+            } else {
+                setAsistire(false);
+            }
+        } else {
+            setAsistire(false);
+        }
+    }, [item, tipo, userId]);
+
+    const handleAsistir = async () => {
+        setAsistirError(null);
+        try {
+            await asistirAEvento({ userId, eventoId: item.id, tipo: tipo === 'eventos' ? 'EVENTO' : 'WEBINAR' });
+            setAsistire(true);
+            // Consultar de nuevo el número de asistentes desde la API después de registrar la asistencia
+            const data = await contarAsistentes(item.id, tipo === 'eventos' ? 'EVENTO' : 'WEBINAR');
+            const n = Number(data);
+            setAsistentes(Number.isFinite(n) ? n : 0);
+        } catch (error) {
+            setAsistirError('Ocurrió un error al registrar tu asistencia. Intenta de nuevo.');
+        }
+    };
 
     if (cargando) {
         return (
@@ -195,6 +243,24 @@ function DetalleItemPage() {
                             )}
                         </Col>
                     </Row>
+                    {(tipo === 'eventos' || tipo === 'webinars') && (
+                        <div className="my-3 text-center">
+                            {!userId ? (
+                                <div className="mb-2 text-danger">Debes iniciar sesión para marcar tu asistencia.</div>
+                            ) : (
+                                <Button
+                                    variant={asistire ? "success" : "primary"}
+                                    onClick={handleAsistir}
+                                    disabled={asistire}
+                                    className="mb-2"
+                                >
+                                    {asistire ? "¡Ya asistirás!" : "Asistiré"}
+                                </Button>
+                            )}
+                            <div>Asistentes: {asistentes}</div>
+                            {asistirError && <div className="text-danger mt-2">{asistirError}</div>}
+                        </div>
+                    )}
                 </Card.Body>
                 <Card.Footer className="d-flex justify-content-center p-4 bg-light border-top">
                     <Button variant="secondary" onClick={() => navegar(-1)} className="btn-lg">

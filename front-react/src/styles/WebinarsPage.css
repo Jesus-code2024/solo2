@@ -180,24 +180,27 @@
 }
 
 .webinar-card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1.5rem;
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between; /* Distributes space between items (status badge and action icons) */
+    align-items: center;
+    padding: 10px 15px; /* Adjust padding as needed */
+    border-bottom: 1px solid #eee;
 }
 
 .webinar-status-badge {
-  z-index: 2;
+    /* If you want the badge to stay on the left */
+    flex-shrink: 0; /* Prevent it from shrinking */
 }
 
 .webinar-actions-quick {
-  display: flex;
-  gap: 10px;
-  z-index: 2;
+    display: flex;
+    flex-grow: 1; /* Allow it to take available space */
+    justify-content: center; /* Center the items horizontally within this div */
+    align-items: center;
+    gap: 15px; /* Adds space between the buttons */
+    position: relative; /* Needed for absolute positioning if you want to place favorite button truly at the start/end */
 }
+
 
 .webinar-actions-quick .btn {
   padding: 8px 12px;
@@ -216,6 +219,28 @@
 .webinar-actions-quick .favorite-btn.active {
   background: rgba(220, 53, 69, 0.8);
   color: white;
+}
+.webinar-actions-quick .share-btn {
+    /* This will be centered due to justify-content: center on its parent */
+    color: #007bff; /* Primary blue for share */
+    font-size: 1.2rem;
+    padding: 5px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.webinar-actions-quick .favorite-btn {
+    position: absolute; /* Position it absolutely within .webinar-actions-quick */
+    left: 0; /* Place it at the start */
+    top: 50%; /* Vertically center it */
+    transform: translateY(-50%); /* Adjust for vertical centering */
+    color: #6c757d; /* Default color */
+    font-size: 1.2rem;
+    padding: 5px;
+    border-radius: 50%; /* Make it round */
+    background-color: rgba(0, 0, 0, 0.05); /* Light background */
+    transition: all 0.3s ease;
 }
 
 .webinar-card-body {

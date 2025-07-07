@@ -28,10 +28,7 @@
                     <label for="titulo" class="block text-sm font-semibold text-blue-900 mb-2">Título</label>
                     <input type="text" name="titulo" id="titulo" value="{{ publicacion.titulo }}" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400" required>
                 </div>
-                <div class="mb-4">
-                    <label for="contenido" class="block text-sm font-semibold text-blue-900 mb-2">Contenido/Descripción</label>
-                    <textarea name="contenido" id="contenido" rows="4" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">{{ publicacion.contenido|default_if_none:'' }}{{ publicacion.descripcion|default_if_none:'' }}</textarea>
-                </div>
+
                 {% if publicacion.tipo == 'anuncio' %}
                 <div class="mb-4">
                     <label for="tipo_anuncio" class="block text-sm font-semibold text-blue-900 mb-2">Tipo de Anuncio</label>
@@ -45,7 +42,7 @@
                 {% if publicacion.tipo == 'evento' %}
                 <div class="mb-4">
                     <label for="descripcion" class="block text-sm font-semibold text-blue-900 mb-2">Descripción</label>
-                    <input type="text" name="descripcion" id="descripcion" value="{{ publicacion.descripcion }}" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <textarea name="descripcion" id="descripcion" rows="4" class="w-full border border-blue-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400">{{ publicacion.descripcion }}</textarea>
                 </div>
                 <div class="mb-4">
                     <label for="fechaInicio" class="block text-sm font-semibold text-blue-900 mb-2">Fecha Inicio</label>
