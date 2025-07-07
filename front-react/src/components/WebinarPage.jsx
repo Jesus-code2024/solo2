@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Alert, Form, Button, Modal, Card, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Alert, Form, Button, Modal, Card, Badge, Toast, ToastContainer } from 'react-bootstrap';
 import { 
     FaSearch, 
     FaVideo, 
@@ -25,7 +25,8 @@ import {
     FaExternalLinkAlt,
     FaLaptop,
     FaMicrophone,
-    FaEye
+    FaEye,
+    FaSync
 } from 'react-icons/fa';
 import '../styles/WebinarsPage.css';
 
@@ -53,6 +54,8 @@ function WebinarsPage() {
     const [viewMode, setViewMode] = useState('grid');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [webinarToDelete, setWebinarToDelete] = useState(null);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
     const navigate = useNavigate();
 
     const getAuthHeaders = () => {
@@ -64,7 +67,9 @@ function WebinarsPage() {
         setLoading(true);
         setError(null);
         try {
+            console.log('Fetching webinars from:', API_URL_WEBINARS);
             const response = await axios.get(API_URL_WEBINARS, { headers: getAuthHeaders() });
+            console.log('Webinars response:', response.data);
             setWebinars(response.data);
         } catch (err) {
             console.error('Error al cargar los webinars:', err);
@@ -89,8 +94,90 @@ function WebinarsPage() {
         }
     }, []);
 
+    // Agregar un efecto para refrescar cuando se vuelve a la página
+    useEffect(() => {
+        const handleFocus = () => {
+            fetchWebinars();
+        };
+        
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, []);
+
+    // Refrescar cuando se navega a esta página
+    useEffect(() => {
+        const unsubscribe = () => {
+            fetchWebinars();
+        };
+        
+        // Escuchar cambios en la navegación
+        window.addEventListener('popstate', unsubscribe);
+        return () => window.removeEventListener('popstate', unsubscribe);
+    }, []);
+
+    // Detectar si se debe refrescar por creación/edición de webinar
+    useEffect(() => {
+        const shouldRefresh = sessionStorage.getItem('webinarCreated') || sessionStorage.getItem('webinarUpdated');
+        if (shouldRefresh) {
+            fetchWebinars();
+            if (sessionStorage.getItem('webinarCreated')) {
+                setToastMessage('¡Webinar creado exitosamente!');
+                setShowToast(true);
+                sessionStorage.removeItem('webinarCreated');
+            }
+            if (sessionStorage.getItem('webinarUpdated')) {
+                setToastMessage('¡Webinar actualizado exitosamente!');
+                setShowToast(true);
+                sessionStorage.removeItem('webinarUpdated');
+            }
+        }
+    }, []);
+
+    // Monitorear cambios en sessionStorage
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'webinarCreated' || e.key === 'webinarUpdated') {
+                fetchWebinars();
+                sessionStorage.removeItem('webinarCreated');
+                sessionStorage.removeItem('webinarUpdated');
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
+
     const handleCreateWebinarClick = () => {
         navigate('/webinar/new'); 
+    };
+
+    // Función para refrescar manualmente los webinars
+    const handleRefreshWebinars = () => {
+        fetchWebinars();
+    };
+
+    // Función de diagnóstico
+    const runDiagnostic = () => {
+        console.log('=== DIAGNÓSTICO DE WEBINARS ===');
+        console.log('Token JWT:', localStorage.getItem('jwtToken') ? 'Presente' : 'Ausente');
+        console.log('URL API:', API_URL_WEBINARS);
+        console.log('Total webinars cargados:', webinars.length);
+        console.log('Webinars:', webinars);
+        console.log('Filtros activos:', { selectedWebinarType, searchTerm, sortBy });
+        console.log('Webinars filtrados:', sortedAndFilteredWebinars.length);
+        console.log('Estado de carga:', { loading, error });
+        
+        // Verificar conexión a la API
+        axios.get(API_URL_WEBINARS, { headers: getAuthHeaders() })
+            .then(response => {
+                console.log('✅ Conexión API exitosa. Datos recibidos:', response.data.length, 'webinars');
+                console.log('Datos completos:', response.data);
+            })
+            .catch(err => {
+                console.log('❌ Error en conexión API:', err);
+                console.log('Status:', err.response?.status);
+                console.log('Data:', err.response?.data);
+            });
     };
 
     const handleEditClick = (id) => {
@@ -109,6 +196,8 @@ function WebinarsPage() {
                 setShowDeleteModal(false);
                 setWebinarToDelete(null);
                 fetchWebinars();
+                setToastMessage('Webinar eliminado con éxito.');
+                setShowToast(true);
             } catch (err) {
                 console.error('Error al eliminar el webinar:', err);
                 if (err.response && err.response.status === 403) {
@@ -251,6 +340,8 @@ function WebinarsPage() {
                             <p>Participa en webinars educativos y conferencias en línea</p>
                         </Col>
                         <Col md={4} className="text-md-end">
+                            {/* Eliminar o comentar este botón: */}
+                            {/*
                             <Button 
                                 variant="outline-light"
                                 onClick={handleCreateWebinarClick}
@@ -259,6 +350,9 @@ function WebinarsPage() {
                                 <FaPlus style={{ marginRight: '8px' }} />
                                 Crear Webinar
                             </Button>
+                            */}
+                            {/* Eliminar o comentar este botón: */}
+                            {/*
                             <Button 
                                 variant="outline-light"
                                 onClick={() => setShowFilters(!showFilters)}
@@ -267,6 +361,7 @@ function WebinarsPage() {
                                 <FaFilter style={{ marginRight: '8px' }} />
                                 Filtros
                             </Button>
+                            */}
                         </Col>
                     </Row>
                 </div>
@@ -295,7 +390,36 @@ function WebinarsPage() {
                     </div>
                 </div>
 
+                {/* Debug info - remover en producción */}
+                {process.env.NODE_ENV === 'development' && (
+                    <div style={{ margin: '20px 0', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
+                        <small>
+                            <strong>Debug Info:</strong> Webinars cargados: {webinars.length} | 
+                            Filtros activos: {selectedWebinarType} | 
+                            Búsqueda: "{searchTerm}" | 
+                            Filtrados: {sortedAndFilteredWebinars.length}
+                            <Button 
+                                variant="outline-secondary" 
+                                size="sm" 
+                                onClick={() => console.log('Current webinars:', webinars)}
+                                style={{ marginLeft: '10px' }}
+                            >
+                                Log Webinars
+                            </Button>
+                            <Button 
+                                variant="outline-info" 
+                                size="sm" 
+                                onClick={runDiagnostic}
+                                style={{ marginLeft: '5px' }}
+                            >
+                                Diagnóstico Completo
+                            </Button>
+                        </small>
+                    </div>
+                )}
+
                 {/* Search and Filters */}
+                {/* Si no quieres los filtros, puedes comentar o eliminar toda la sección `search-section` */}
                 <div className="search-section">
                     <div className="search-container">
                         <Form.Control
@@ -307,7 +431,36 @@ function WebinarsPage() {
                         />
                         <FaSearch className="search-icon" />
                     </div>
+                    
+                    {/* Botones de acción */}
+                    <div className="action-buttons" style={{ marginTop: '15px', textAlign: 'center' }}>
+                        <Button 
+                            variant="primary" 
+                            onClick={handleCreateWebinarClick}
+                            style={{ marginRight: '10px' }}
+                        >
+                            <FaPlus style={{ marginRight: '8px' }} />
+                            Crear Webinar
+                        </Button>
+                        <Button 
+                            variant="outline-secondary" 
+                            onClick={handleRefreshWebinars}
+                            disabled={loading}
+                            style={{ marginRight: '10px' }}
+                        >
+                            <FaSync className={loading ? 'fa-spin' : ''} style={{ marginRight: '8px' }} />
+                            {loading ? 'Refrescando...' : 'Refrescar'}
+                        </Button>
+                        <Button 
+                            variant="outline-info" 
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            <FaFilter style={{ marginRight: '8px' }} />
+                            {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+                        </Button>
+                    </div>
 
+                    {/* También puedes comentar o eliminar completamente esta sección `filters-section` si no quieres que aparezca el formulario de filtros al hacer clic */}
                     {showFilters && (
                         <div className="filters-section">
                             <Row>
@@ -361,16 +514,39 @@ function WebinarsPage() {
                 {sortedAndFilteredWebinars.length === 0 ? (
                     <div className="empty-state">
                         <FaVideo className="empty-state-icon" />
-                        <h3>No se encontraron webinars</h3>
-                        <p>No hay webinars que coincidan con tu búsqueda o filtros.</p>
+                        <h3>
+                            {webinars.length === 0 
+                                ? 'No hay webinars disponibles'
+                                : 'No se encontraron webinars'
+                            }
+                        </h3>
+                        <p>
+                            {webinars.length === 0 
+                                ? 'Parece que aún no hay webinars creados. ¡Sé el primero en crear uno!'
+                                : 'No hay webinars que coincidan con tu búsqueda o filtros.'
+                            }
+                        </p>
                         <Button 
                             variant="primary" 
                             onClick={handleCreateWebinarClick}
                             className="btn-primary-modern"
                         >
                             <FaPlus style={{ marginRight: '8px' }} />
-                            Crear Primer Webinar
+                            {webinars.length === 0 ? 'Crear Primer Webinar' : 'Crear Nuevo Webinar'}
                         </Button>
+                        {webinars.length > 0 && (
+                            <Button 
+                                variant="outline-secondary" 
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setSelectedWebinarType('all');
+                                }}
+                                className="btn-secondary-modern"
+                                style={{ marginLeft: '10px' }}
+                            >
+                                Limpiar Filtros
+                            </Button>
+                        )}
                     </div>
                 ) : (
                     <div className={`webinars-container ${viewMode}`}>
@@ -617,6 +793,19 @@ function WebinarsPage() {
                         </Button>
                     </Modal.Footer>
                 </Modal>
+
+                {/* Toast Notifications */}
+                <ToastContainer position="top-end" className="p-3">
+                    <Toast 
+                        bg="success" 
+                        onClose={() => setShowToast(false)} 
+                        show={showToast} 
+                        delay={3000} 
+                        autohide
+                    >
+                        <Toast.Body>{toastMessage}</Toast.Body>
+                    </Toast>
+                </ToastContainer>
             </Container>
         </div>
     );

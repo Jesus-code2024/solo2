@@ -58,6 +58,10 @@ function EditWebinarPage() {
         try {
             await axios.put(`${API_URL_WEBINARS}/${id}`, webinar, { headers: getAuthHeaders() });
             setSuccess(true);
+            
+            // Marcar que se actualizó un webinar para refrescar la página de webinars
+            sessionStorage.setItem('webinarUpdated', 'true');
+            
             setTimeout(() => {
                 navigate('/webinars');
             }, 1500);

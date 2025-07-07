@@ -25,7 +25,7 @@ import CreateWebinarPage from './components/CreateWebinarPage';
 import EditWebinarPage from './components/EditWebinarPage';
 import Footer from './components/Footer';
 import DetalleItemPage from './components/DetalleItemPage';
-import PerfilPage from './components/PerfilPage'; // ¡IMPORTA LA NUEVA PÁGINA DE PERFIL!
+import PerfilPage from './components/PerfilPage'; 
 
 
 const OAuth2RedirectHandler = () => {

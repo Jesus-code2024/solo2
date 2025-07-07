@@ -45,8 +45,19 @@ function CreateWebinarPage() {
         try {
             await axios.post(API_URL_WEBINARS, newWebinar, { headers: getAuthHeaders() });
             setSuccess(true);
+            
+            // Marcar que se creó un webinar para refrescar la página de webinars
+            sessionStorage.setItem('webinarCreated', 'true');
+            
+            // También refrescar el perfil si viene de ahí
+            const fromProfile = sessionStorage.getItem('createWebinarFromProfile');
+            if (fromProfile) {
+                sessionStorage.setItem('webinarCreatedFromProfile', 'true');
+                sessionStorage.removeItem('createWebinarFromProfile');
+            }
+            
             setTimeout(() => {
-                navigate('/webinars');
+                navigate(fromProfile ? '/perfil' : '/webinars');
             }, 1500);
         } catch (err) {
             console.error('Error al crear el webinar:', err);

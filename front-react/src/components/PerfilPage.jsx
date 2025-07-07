@@ -8,6 +8,7 @@ const API_BASE_URL = 'http://localhost:8080/api'; // URL base de tu API
 
 function PerfilPage() {
     const [userEvents, setUserEvents] = useState([]);
+    const [userWebinars, setUserWebinars] = useState([]); // Nuevo estado para webinars
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
@@ -42,8 +43,8 @@ function PerfilPage() {
         }
     }, [navigate]);
 
-    // Función para cargar los eventos del usuario
-    const fetchUserEvents = async () => {
+    // Función para cargar los eventos y webinars del usuario
+    const fetchUserContent = async () => {
         if (!currentUserId) return;
 
         setLoading(true);
@@ -52,51 +53,61 @@ function PerfilPage() {
             const response = await axios.get(`${API_BASE_URL}/eventos/autor/${currentUserId}`, {
                 headers: getAuthHeaders()
             });
-            setUserEvents(response.data);
+
+            // Aquí filtramos los eventos y webinars.
+            // Asumo que tienes una propiedad 'esWebinar' o 'tipo' en tus eventos.
+            // Si no, necesitarás ajustar esta lógica o la forma en que tu backend diferencia.
+            const events = response.data.filter(item => item.tipo !== 'WEBINAR' && item.tipo !== 'ONLINE'); // Ajusta según tu campo
+            const webinars = response.data.filter(item => item.tipo === 'WEBINAR' || item.tipo === 'ONLINE'); // Ajusta según tu campo
+
+            setUserEvents(events);
+            setUserWebinars(webinars);
         } catch (err) {
-            console.error('Error al cargar los eventos del usuario:', err);
-            setError('No se pudieron cargar tus eventos. Por favor, intente de nuevo.');
+            console.error('Error al cargar el contenido del usuario:', err);
+            setError('No se pudo cargar tu contenido. Por favor, intente de nuevo.');
             if (err.response && err.response.status === 401) {
                 localStorage.removeItem('jwtToken');
                 navigate('/login');
             } else if (err.response && err.response.status === 403) {
-                setError('No tienes permiso para ver estos eventos.');
+                setError('No tienes permiso para ver este contenido.');
             }
         } finally {
             setLoading(false);
         }
     };
 
-    // Cargar eventos del usuario al montar y cuando cambie el ID del usuario
+    // Cargar eventos y webinars del usuario al montar y cuando cambie el ID del usuario
     useEffect(() => {
-        fetchUserEvents();
+        fetchUserContent();
     }, [currentUserId, navigate]);
 
-    // Función para manejar la eliminación de un evento
-    const handleDeleteEvent = async (eventId) => {
-        if (window.confirm('¿Estás seguro de que quieres eliminar este evento?')) {
+    // Función para manejar la eliminación de un evento o webinar
+    const handleDeleteContent = async (contentId, type) => { // 'type' puede ser 'evento' o 'webinar' si las rutas de eliminación son diferentes
+        const confirmMessage = `¿Estás seguro de que quieres eliminar este ${type}?`;
+        if (window.confirm(confirmMessage)) {
             try {
-                await axios.delete(`${API_BASE_URL}/eventos/${eventId}`, {
+                // Asumo que la API de eliminación es la misma para ambos.
+                await axios.delete(`${API_BASE_URL}/eventos/${contentId}`, {
                     headers: getAuthHeaders()
                 });
-                alert('Evento eliminado con éxito.');
-                fetchUserEvents();
+                alert(`${type.charAt(0).toUpperCase() + type.slice(1)} eliminado con éxito.`);
+                fetchUserContent(); // Recargar el contenido después de la eliminación
             } catch (err) {
-                console.error('Error al eliminar el evento:', err);
+                console.error(`Error al eliminar el ${type}:`, err);
                 if (err.response) {
                     if (err.response.status === 401) {
                         setError('No autorizado. Por favor, inicie sesión de nuevo.');
                         localStorage.removeItem('jwtToken');
                         navigate('/login');
                     } else if (err.response.status === 403) {
-                        setError('No tienes permiso para eliminar este evento.');
+                        setError(`No tienes permiso para eliminar este ${type}.`);
                     } else if (err.response.data && err.response.data.message) {
                         setError(`Error al eliminar: ${err.response.data.message}`);
                     } else {
-                        setError('Ocurrió un error al eliminar el evento.');
+                        setError(`Ocurrió un error al eliminar el ${type}.`);
                     }
                 } else {
-                    setError('Error de red o conexión al intentar eliminar el evento.');
+                    setError(`Error de red o conexión al intentar eliminar el ${type}.`);
                 }
             }
         }
@@ -108,7 +119,7 @@ function PerfilPage() {
                 <Spinner animation="border" role="status">
                     <span className="visually-hidden">Cargando...</span>
                 </Spinner>
-                <p>Cargando tus eventos...</p>
+                <p>Cargando tu perfil y contenido...</p>
             </Container>
         );
     }
@@ -134,13 +145,74 @@ function PerfilPage() {
                     <h1 className="mb-1">Perfil de Usuario</h1>
                     {userEmail && <p className="text-muted lead">{userEmail}</p>}
                     <hr />
-                    <Button variant="success" onClick={() => navigate('/evento/new')} className="mt-3">
-                        Crear Nuevo Evento
-                    </Button>
+                    <div className="d-flex justify-content-center gap-3"> {/* Contenedor para botones de creación */}
+                        <Button variant="success" onClick={() => navigate('/evento/new')} className="mt-3">
+                            Crear Nuevo Evento Presencial
+                        </Button>
+                        <Button variant="info" onClick={() => navigate('/webinar/new')} className="mt-3"> {/* Nueva ruta para crear webinar */}
+                            Crear Nuevo Webinar Online
+                        </Button>
+                    </div>
                 </Col>
             </Row>
 
-            <h2 className="text-center mb-4">Mis Eventos Creados</h2>
+            {/* Sección de Mis Webinars Creados */}
+            <h2 className="text-center mb-4">Mis Webinars Creados</h2>
+            <Row className="justify-content-center">
+                {userWebinars.length > 0 ? (
+                    userWebinars.map(webinar => (
+                        <Col key={webinar.id} md={6} lg={4} className="mb-4">
+                            <Card className="event-card-profile h-100 shadow-sm border-0">
+                                <Card.Img
+                                    variant="top"
+                                    src={webinar.imagen ? `http://localhost:8080/uploads/${webinar.imagen}` : 'https://via.placeholder.com/400x200?text=Webinar+Online'}
+                                    alt={webinar.titulo}
+                                    style={{ height: '200px', objectFit: 'cover' }}
+                                />
+                                <Card.Body className="d-flex flex-column">
+                                    <Card.Title className="text-primary">{webinar.titulo}</Card.Title>
+                                    <Card.Text className="text-muted small mb-2">
+                                        <p className="mb-1"><strong>Descripción:</strong> {webinar.descripcion.substring(0, Math.min(webinar.descripcion.length, 100))}...</p>
+                                        <p className="mb-1"><strong>Enlace:</strong> <a href={webinar.enlaceWebinar} target="_blank" rel="noopener noreferrer">Ir al Webinar</a></p> {/* Asumo un campo 'enlaceWebinar' */}
+                                        <p className="mb-1"><strong>Capacidad:</strong> {webinar.capacidad}</p>
+                                        {webinar.fechaInicio && <p className="mb-1"><strong>Fecha Inicio:</strong> {new Date(webinar.fechaInicio).toLocaleDateString()}</p>}
+                                        {webinar.fechaFin && <p className="mb-1"><strong>Fecha Fin:</strong> {new Date(webinar.fechaFin).toLocaleDateString()}</p>}
+                                        {webinar.carrera && <p className="mb-1"><strong>Carrera:</strong> {webinar.carrera.nombre}</p>}
+                                    </Card.Text>
+                                    <div className="mt-auto d-flex justify-content-between pt-3 border-top">
+                                        <Button variant="outline-primary" size="sm" onClick={() => navigate(`/webinars/${webinar.id}`)}> {/* Nueva ruta para ver detalles del webinar */}
+                                            Ver Detalles
+                                        </Button>
+                                        <Button variant="outline-warning" size="sm" className="ms-2" onClick={() => navigate(`/edit-webinar/${webinar.id}`)}> {/* Nueva ruta para editar webinar */}
+                                            Editar
+                                        </Button>
+                                        <Button
+                                            variant="outline-danger"
+                                            size="sm"
+                                            className="ms-2"
+                                            onClick={() => handleDeleteContent(webinar.id, 'webinar')}
+                                        >
+                                            Eliminar
+                                        </Button>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    ))
+                ) : (
+                    <Col xs={12}>
+                        <Alert variant="info" className="text-center shadow-sm">No has creado ningún webinar aún.</Alert>
+                        <div className="text-center mt-3">
+                            <Button variant="info" onClick={() => navigate('/webinar/new')}>
+                                Crear Nuevo Webinar
+                            </Button>
+                        </div>
+                    </Col>
+                )}
+            </Row>
+
+            {/* Sección de Mis Eventos Creados */}
+            <h2 className="text-center mb-4 mt-5">Mis Eventos Presenciales Creados</h2> {/* Título actualizado */}
             <Row className="justify-content-center">
                 {userEvents.length > 0 ? (
                     userEvents.map(event => (
@@ -173,7 +245,7 @@ function PerfilPage() {
                                             variant="outline-danger"
                                             size="sm"
                                             className="ms-2"
-                                            onClick={() => handleDeleteEvent(event.id)}
+                                            onClick={() => handleDeleteContent(event.id, 'evento')}
                                         >
                                             Eliminar
                                         </Button>
@@ -184,10 +256,10 @@ function PerfilPage() {
                     ))
                 ) : (
                     <Col xs={12}>
-                        <Alert variant="info" className="text-center shadow-sm">No has creado ningún evento aún.</Alert>
+                        <Alert variant="info" className="text-center shadow-sm">No has creado ningún evento presencial aún.</Alert>
                         <div className="text-center mt-3">
                             <Button variant="success" onClick={() => navigate('/evento/new')}>
-                                Crear Nuevo Evento
+                                Crear Nuevo Evento Presencial
                             </Button>
                         </div>
                     </Col>
