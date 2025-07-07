@@ -36,7 +36,11 @@ function MainNavbar() {
     const handleLogout = () => {
         localStorage.removeItem('jwtToken');
         localStorage.removeItem('emailLoggedIn'); // Elimina también el email
-        window.dispatchEvent(new Event('storage')); // Notifica a otros componentes
+        
+        // Dispara eventos para notificar cambios
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('localStorageChange'));
+        
         navigate('/login');
         console.log('Sesión cerrada. Redirigiendo a /login.');
     };

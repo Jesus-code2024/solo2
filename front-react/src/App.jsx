@@ -37,7 +37,11 @@ const OAuth2RedirectHandler = () => {
 
     if (token) {
       localStorage.setItem('jwtToken', token);
+      
+      // Dispara múltiples eventos para asegurar sincronización
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('localStorageChange'));
+      
       navigate('/home', { replace: true });
     } else if (error) {
       navigate('/login', {
@@ -58,10 +62,7 @@ const OAuth2RedirectHandler = () => {
 };
 
 // 🛡️ Ruta protegida con navbar
-const ProtectedRoute = () => {
-  const token = localStorage.getItem('jwtToken');
-  const isAuthenticated = token && token.length > 0;
-
+const ProtectedRoute = ({ isAuthenticated }) => {
   return isAuthenticated ? (
     <>
       <MainNavbar />
@@ -89,8 +90,16 @@ function App() {
       setAuthenticatedUser(isAuth);
     };
 
+    // Escucha eventos de almacenamiento locales
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    
+    // Escucha eventos personalizados para cambios internos
+    window.addEventListener('localStorageChange', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('localStorageChange', handleStorageChange);
+    };
   }, []);
 
   const isAuthenticated = () => authenticatedUser;
@@ -108,7 +117,7 @@ function App() {
         <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
 
         {/* 🔒 TODAS LAS RUTAS PROTEGIDAS VAN AQUI DENTRO */}
-        <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated()} />}>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<HomePage />} />
 
